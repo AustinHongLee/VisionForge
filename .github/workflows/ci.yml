@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  constitution-guard:
+    name: 憲法守門（D1/D13）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 禁止 import 掃描
+        run: python scripts/check_forbidden_imports.py
+
+  core:
+    name: core 契約（ruff + pytest）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: 安裝
+        run: uv sync
+      - name: Lint
+        run: uv run ruff check core
+      - name: 契約測試
+        run: uv run pytest core/tests -q

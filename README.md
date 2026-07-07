@@ -14,10 +14,11 @@
 
 | 階段 | 狀態 |
 |---|---|
-| 文件工程（R1 規劃 → R2 評審 → 憲法 → 分工協議 → 文件治理） | ✅ 完成 |
-| ADR-0002 技術棧確認、Claim Schema 草案 | ⬜ 下一步（Claude） |
-| repo 骨架、CI 守門（依賴方向 lint、core 禁 import） | ⬜ 排隊中（Claude） |
-| 第一張 Codex 規格票（Provider adapter／匯入管線／GUI 殼） | ⬜ 等前兩項完成 |
+| 文件工程（R1 → R2 → 憲法 → 分工協議 → 文件治理） | ✅ 完成 |
+| ADR-0002 技術棧、ADR-0003 Claim Schema | ✅ 已採納 |
+| repo 骨架＋核心契約（`core/.../contracts/claims.py`，17 測試綠燈）＋CI 守門 | ✅ 完成 |
+| 票-0001（Electron 殼＋Bridge）→ Codex | 🟨 已發出，等施工 |
+| 帳本 Schema（Decision／Cost／血統——B1 誠實本體） | ⬜ 下一步（Claude） |
 
 ## 給 AI Agent 的入場須知
 

@@ -1,0 +1,7 @@
+# 分工協議 §4 紅線：以下路徑必經 Claude 審查後由人合併。
+# 注意：請把 @REPLACE_ME 換成你的 GitHub 帳號，並在 GitHub 設定 branch protection 後生效。
+/core/           @REPLACE_ME
+/scripts/        @REPLACE_ME
+/.github/        @REPLACE_ME
+/docs/00-法規/   @REPLACE_ME
+/docs/01-定義/   @REPLACE_ME

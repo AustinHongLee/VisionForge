@@ -1,0 +1,15 @@
+[project]
+name = "visionforge-core"
+version = "0.1.0"
+description = "VisionForge 核心：契約、Orchestrator、治理帳本（確定性保留區，憲法 A5）"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/visionforge_core"]

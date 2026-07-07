@@ -1,0 +1,31 @@
+[project]
+name = "visionforge-workspace"
+version = "0.0.0"
+description = "VisionForge monorepo 工作區根（不含程式碼，只管工具鏈）"
+requires-python = ">=3.12"
+dependencies = ["visionforge-core"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["core"]
+
+[tool.uv.sources]
+visionforge-core = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["core/tests"]
