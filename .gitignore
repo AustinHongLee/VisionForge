@@ -1,0 +1,25 @@
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 編輯器
+.idea/
+*.swp
+
+# Python（未來）
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node（未來）
+node_modules/
+dist/
+out/
+
+# 產物與快取（未來）
+*.log
+.cache/
