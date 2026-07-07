@@ -1,0 +1,19 @@
+[project]
+name = "visionforge-app"
+version = "0.1.0"
+description = "VisionForge 服務層：匯入管線與本機服務（依賴方向 服務→core，憲法 A3/D13）"
+requires-python = ">=3.12"
+dependencies = [
+    "visionforge-core",
+    "pillow>=10.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/visionforge_app"]
+
+[tool.uv.sources]
+visionforge-core = { workspace = true }

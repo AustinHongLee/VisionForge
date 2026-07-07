@@ -3,16 +3,17 @@ name = "visionforge-workspace"
 version = "0.0.0"
 description = "VisionForge monorepo 工作區根（不含程式碼，只管工具鏈）"
 requires-python = ">=3.12"
-dependencies = ["visionforge-core"]
+dependencies = ["visionforge-core", "visionforge-app"]
 
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["core"]
+members = ["core", "app"]
 
 [tool.uv.sources]
 visionforge-core = { workspace = true }
+visionforge-app = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -26,6 +27,9 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
+# UP017（datetime.UTC）與 UP042（StrEnum）為 3.11+ 專屬語法；為保留在 3.10 沙箱
+# 驗證測試的能力，暫以 timezone.utc／(str, Enum) 寫法為準。純風格差異，無行為影響。
+ignore = ["UP017", "UP042"]
 
 [tool.pytest.ini_options]
-testpaths = ["core/tests"]
+testpaths = ["core/tests", "app/tests"]

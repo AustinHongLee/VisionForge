@@ -32,6 +32,21 @@ jobs:
       - name: 契約測試
         run: uv run pytest core/tests -q
 
+  app:
+    name: app 服務（ruff + pytest）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - name: 安裝
+        run: uv sync
+      - name: Lint
+        run: uv run ruff check app
+      - name: 服務測試
+        run: uv run pytest app/tests -q
+
   ui:
     name: ui 殼（build + test + depcruise）
     runs-on: ubuntu-latest
