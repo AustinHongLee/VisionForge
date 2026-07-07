@@ -31,3 +31,28 @@ jobs:
         run: uv run ruff check core
       - name: 契約測試
         run: uv run pytest core/tests -q
+
+  ui:
+    name: ui 殼（build + test + depcruise）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+      - name: 安裝
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
+      - name: Test
+        run: pnpm test
+      - name: Dependency cruise
+        run: pnpm depcruise

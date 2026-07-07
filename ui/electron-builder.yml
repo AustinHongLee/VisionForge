@@ -1,0 +1,10 @@
+appId: tw.goodyolo.visionforge
+productName: VisionForge
+directories:
+  output: release
+files:
+  - out/**
+  - package.json
+win:
+  target:
+    - nsis
