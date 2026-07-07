@@ -31,16 +31,18 @@
 | 文件 | 分類 | 版本 | 狀態 | 說明 |
 |---|---|---|---|---|
 | [VisionForge_Constitution_v1.0.md](00-法規/VisionForge_Constitution_v1.0.md) | 法規 | v1.0 | 🟩 定案 | **最高法**。79 條可引用條文＋名詞定義＋違憲審查附錄 |
-| [VisionForge_AI分工協議_v1.md](00-法規/VisionForge_AI分工協議_v1.md) | 法規 | v1.1 | 🟩 定案 | Claude／Codex 分工邊界、規格票制、紅線、審查分級制（L0/L1/L2） |
+| [VisionForge_AI分工協議_v1.md](00-法規/VisionForge_AI分工協議_v1.md) | 法規 | v1.2 | 🟩 定案 | Architect／Builder 角色分工（綁角色不綁型號）、規格票制、紅線、審查分級 |
+| [交接手冊.md](交接手冊.md) | 治理 | 活文件 | 🟩 定案 | 架構代理交接程序、戰況、環境怪癖、工作慣例 |
 | [名詞定義表.md](01-定義/名詞定義表.md) | 定義 | 活文件 | 🟩 定案 | 全專案語彙登記處；憲法名詞之快速索引 |
 | [ADR-模板.md](02-ADR/ADR-模板.md) | ADR | v1 | 🟩 定案 | 一切架構決策的固定格式 |
 | [ADR-0001-文件治理結構.md](02-ADR/ADR-0001-文件治理結構.md) | ADR | — | 🟩 已採納 | 本 docs/ 結構自身的決策紀錄 |
 | [ADR-0002-技術棧選定.md](02-ADR/ADR-0002-技術棧選定.md) | ADR | — | 🟩 已採納 | Electron＋React/TS＋FastAPI＋SQLite＋CI 守門鏈 |
 | [ADR-0003-Claim-Schema-v1.md](02-ADR/ADR-0003-Claim-Schema-v1.md) | ADR | — | 🟩 已採納 | Claim Schema 定案＋五項裁決；唯一事實來源＝`core/.../contracts/claims.py` |
 | [ADR-0004-帳本Schema-v1.md](02-ADR/ADR-0004-帳本Schema-v1.md) | ADR | — | 🟨 提案 | Decision/Cost/ReviewEvent/Manifest/黃金集帳本；**合併即視同採納** |
+| [ADR-0005-儲存層設計.md](02-ADR/ADR-0005-儲存層設計.md) | ADR | — | 🟨 提案 | 文件式 SQLite＋append-only repos＋遷移＋blob 庫；**合併即視同採納** |
 | [20260707-claim-schema-草案.md](05-討論/20260707-claim-schema-草案.md) | 討論 | v0.1 | ⬛ 已歸檔 | 已落地於 ADR-0003＋契約程式碼 |
 | [票-0001-UI殼與Bridge.md](06-規格票/票-0001-UI殼與Bridge.md) | 規格票 | — | ⬛ 已結案 | 審查通過（Blocking 0）；Non-blocking 5 項移票-0002 |
-| [票-0002-UI殼安全加固.md](06-規格票/票-0002-UI殼安全加固.md) | 規格票 | — | 🟨 已發出 | L0 免審：openExternal 白名單、導航鎖、CSP、depcruise 擴充 |
+| [票-0002-UI殼安全加固.md](06-規格票/票-0002-UI殼安全加固.md) | 規格票 | — | ⬛ 已結案 | L0 合併＋L1 抽查通過；openExternal 白名單、導航鎖、CSP、depcruise 擴充 |
 | [GoodYolo_產品規劃書.md](03-規劃/GoodYolo_產品規劃書.md) | 規劃 | R1 | 🟧 部分失效 | 10 項設計被憲法附錄推翻；治理／審核／白話層章節仍為 R3 素材 |
 | [GoodYolo_架構評審_R2.md](04-評審/GoodYolo_架構評審_R2.md) | 評審 | R2 | 🟩 定案 | 結論已入憲；10.6 新骨架為 R3 與開發基準 |
 
