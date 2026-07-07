@@ -12,6 +12,28 @@ module.exports = {
         path: "^electron$",
       },
     },
+    {
+      name: "no-renderer-imports-from-main-or-preload",
+      comment: "D13: renderer code must not import Electron process code.",
+      severity: "error",
+      from: {
+        path: "^src/renderer",
+      },
+      to: {
+        path: "^src/(main|preload)",
+      },
+    },
+    {
+      name: "no-main-or-preload-imports-from-renderer",
+      comment: "D13: Electron process code must not import renderer code.",
+      severity: "error",
+      from: {
+        path: "^src/(main|preload)",
+      },
+      to: {
+        path: "^src/renderer",
+      },
+    },
   ],
   options: {
     doNotFollow: {
