@@ -19,7 +19,8 @@
 | repo 骨架＋核心契約（`core/.../contracts/claims.py`，17 測試綠燈）＋CI 守門 | ✅ 完成 |
 | 票-0001（Electron 殼＋Bridge） | ✅ 交付並通過審查，已合併 |
 | 票-0002（UI 殼安全加固，L0 免審）→ Codex | 🟨 已發出，等施工 |
-| 帳本 Schema（Decision／Cost／血統——B1 誠實本體） | ⬜ 下一步（Claude） |
+| 帳本 Schema（ADR-0004，36 測試綠燈） | ✅ 完成 |
+| 儲存層（project.db 映射＋repository 介面）→ 解鎖匯入管線票 | ⬜ 下一步（Claude） |
 
 ## 給 AI Agent 的入場須知
 

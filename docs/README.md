@@ -37,6 +37,7 @@
 | [ADR-0001-文件治理結構.md](02-ADR/ADR-0001-文件治理結構.md) | ADR | — | 🟩 已採納 | 本 docs/ 結構自身的決策紀錄 |
 | [ADR-0002-技術棧選定.md](02-ADR/ADR-0002-技術棧選定.md) | ADR | — | 🟩 已採納 | Electron＋React/TS＋FastAPI＋SQLite＋CI 守門鏈 |
 | [ADR-0003-Claim-Schema-v1.md](02-ADR/ADR-0003-Claim-Schema-v1.md) | ADR | — | 🟩 已採納 | Claim Schema 定案＋五項裁決；唯一事實來源＝`core/.../contracts/claims.py` |
+| [ADR-0004-帳本Schema-v1.md](02-ADR/ADR-0004-帳本Schema-v1.md) | ADR | — | 🟨 提案 | Decision/Cost/ReviewEvent/Manifest/黃金集帳本；**合併即視同採納** |
 | [20260707-claim-schema-草案.md](05-討論/20260707-claim-schema-草案.md) | 討論 | v0.1 | ⬛ 已歸檔 | 已落地於 ADR-0003＋契約程式碼 |
 | [票-0001-UI殼與Bridge.md](06-規格票/票-0001-UI殼與Bridge.md) | 規格票 | — | ⬛ 已結案 | 審查通過（Blocking 0）；Non-blocking 5 項移票-0002 |
 | [票-0002-UI殼安全加固.md](06-規格票/票-0002-UI殼安全加固.md) | 規格票 | — | 🟨 已發出 | L0 免審：openExternal 白名單、導航鎖、CSP、depcruise 擴充 |
