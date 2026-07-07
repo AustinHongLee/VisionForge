@@ -39,6 +39,7 @@ from visionforge_core.contracts.ledgers import (
     ProvenanceSummary,
     ReviewEvent,
 )
+from visionforge_core.contracts.media import MediaFormat, MediaRecord, MediaSource, SourceKind
 
 __all__ = [
     "REASON_CODES",
@@ -64,6 +65,9 @@ __all__ = [
     "Label",
     "ManifestEntry",
     "MaskRef",
+    "MediaFormat",
+    "MediaRecord",
+    "MediaSource",
     "MediaSubject",
     "Point",
     "PolicyRef",
@@ -74,6 +78,7 @@ __all__ = [
     "Review",
     "ReviewEvent",
     "ReviewStatus",
+    "SourceKind",
     "UnknownGeometry",
     "WholeImage",
 ]

@@ -8,22 +8,22 @@
 **一切從 [docs/README.md](docs/README.md) 開始**——那裡有效力層級、狀態板與全部文件的登記表。
 
 最高效力文件：[VisionForge Constitution v1.0](docs/00-法規/VisionForge_Constitution_v1.0.md)（79 條）。
-協作規範：[AI 分工協議](docs/00-法規/VisionForge_AI分工協議_v1.md)（Claude × Codex）。
+協作規範：[AI 分工協議](docs/00-法規/VisionForge_AI分工協議_v1.md)（Architect × Builder）。
+接任者必讀：[交接手冊](docs/交接手冊.md)。
 
 ## 目前狀態
 
 | 階段 | 狀態 |
 |---|---|
 | 文件工程（R1 → R2 → 憲法 → 分工協議 → 文件治理） | ✅ 完成 |
-| ADR-0002 技術棧、ADR-0003 Claim Schema | ✅ 已採納 |
-| repo 骨架＋核心契約（`core/.../contracts/claims.py`，17 測試綠燈）＋CI 守門 | ✅ 完成 |
-| 票-0001（Electron 殼＋Bridge） | ✅ 交付並通過審查，已合併 |
-| 票-0002（UI 殼安全加固，L0 免審）→ Codex | 🟨 已發出，等施工 |
-| 帳本 Schema（ADR-0004，36 測試綠燈） | ✅ 完成 |
-| 儲存層（project.db 映射＋repository 介面）→ 解鎖匯入管線票 | ⬜ 下一步（Claude） |
+| 契約層：Claim Schema（ADR-0003）＋帳本 Schema（ADR-0004） | ✅ 完成 |
+| 儲存層（ADR-0005，core 49 測試綠、ruff 乾淨） | ✅ 完成 |
+| UI 殼＋安全加固（票-0001/0002，已合併） | ✅ 完成 |
+| 架構代理交接（Fable 5 → Opus 4.8，見交接手冊） | 🟨 就緒 |
+| 票-0003 匯入管線 → Codex | ⬜ 新任 Architect 的第一件事 |
 
 ## 給 AI Agent 的入場須知
 
-1. 先讀 `docs/00-法規/` 全部內容（憲法 D20，無例外）。
+1. 先讀 `docs/00-法規/` 全部內容（憲法 D20，無例外），接任 Architect 者再讀 `docs/交接手冊.md`。
 2. 任何提交說明必須聲明觸及的憲法條文與合規性。
 3. 🟨🟦⬛ 狀態的文件不得作為依據；分工協議的紅線由 CI 強制。

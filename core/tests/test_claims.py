@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
-
 from visionforge_core.contracts import (
     Assertion,
     BBox,
@@ -213,6 +212,6 @@ def test_unknown_fields_rejected_at_boundary():
                 "concept": {"raw_text": "x"},
                 "confidence": {"raw": 0.5},
                 "totally_new_field": 123,
-          
+
             }
         )

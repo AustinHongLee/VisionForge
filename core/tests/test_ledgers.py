@@ -5,7 +5,6 @@ from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
-
 from visionforge_core.contracts import (
     CandidateProvider,
     CostAgent,

@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -134,7 +134,7 @@ class UnknownGeometry(BaseModel):
 
 
 Geometry = Annotated[
-    Union[BBox, Polygon, MaskRef, Keypoints, WholeImage, UnknownGeometry],
+    BBox | Polygon | MaskRef | Keypoints | WholeImage | UnknownGeometry,
     Field(union_mode="left_to_right"),
 ]
 

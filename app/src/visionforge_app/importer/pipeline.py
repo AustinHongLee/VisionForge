@@ -6,12 +6,30 @@ Builder 只實作本體，不得更動簽名。** 政策定案於 ADR-0006。
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from io import BytesIO
 
+from PIL import Image, ImageOps, UnidentifiedImageError
 from visionforge_core.contracts.media import MediaRecord, MediaSource
 from visionforge_core.storage.project import Project
 
+from visionforge_app.importer.errors import (
+    MediaDecodeError,
+    MultiFrameMediaError,
+    UnsupportedMediaFormatError,
+)
+
 DEFAULT_THUMBNAIL_MAX_EDGE = 256
+_EXIF_ORIENTATION = 274
+_PILLOW_TO_MEDIA_FORMAT = {
+    "JPEG": "jpeg",
+    "PNG": "png",
+    "WEBP": "webp",
+    "BMP": "bmp",
+    "TIFF": "tiff",
+}
 
 
 @dataclass(frozen=True)
@@ -59,4 +77,101 @@ def import_media(
         MultiFrameMediaError：多幀輸入。
         MediaDecodeError：無法解碼。
     """
-    raise NotImplementedError("票-0003：由 Builder 實作；簽名與型別已凍結，不得更動")
+    with _decode_image(data) as image:
+        media_format = _media_format(image)
+        _reject_multiframe(image)
+        _load_image(image)
+
+        stored_bytes, normalized = _normalize_bytes(data, image, media_format)
+        media_hash = project.blobs.put(stored_bytes, media_format)
+
+        if project.media.exists(media_hash):
+            return ImportOutcome(
+                media_hash=media_hash,
+                record=project.media.get(media_hash),
+                deduplicated=True,
+            )
+
+        _write_thumbnail(project, media_hash, normalized, thumbnail_max_edge)
+        record = MediaRecord(
+            media_hash=media_hash,
+            width_px=normalized.width,
+            height_px=normalized.height,
+            format=media_format,
+            byte_size=len(stored_bytes),
+            imported_at=datetime.now(timezone.utc),
+            source=source,
+            exif_normalized=True,
+        )
+        project.media.add(record)
+
+        return ImportOutcome(media_hash=media_hash, record=record, deduplicated=False)
+
+
+def _decode_image(data: bytes) -> Image.Image:
+    try:
+        return Image.open(BytesIO(data))
+    except UnidentifiedImageError as exc:
+        raise UnsupportedMediaFormatError("位元組不是支援的影像格式") from exc
+    except OSError as exc:
+        raise MediaDecodeError("影像標頭可辨識但無法解碼") from exc
+
+
+def _media_format(image: Image.Image) -> str:
+    media_format = _PILLOW_TO_MEDIA_FORMAT.get(image.format or "")
+    if media_format is None:
+        raise UnsupportedMediaFormatError(f"不支援的影像格式：{image.format or 'unknown'}")
+    return media_format
+
+
+def _reject_multiframe(image: Image.Image) -> None:
+    if getattr(image, "is_animated", False) or getattr(image, "n_frames", 1) > 1:
+        raise MultiFrameMediaError("多幀影像不在本票範圍")
+
+
+def _load_image(image: Image.Image) -> None:
+    try:
+        image.load()
+    except OSError as exc:
+        raise MediaDecodeError("影像資料損壞或無法完整解碼") from exc
+
+
+def _normalize_bytes(
+    original: bytes,
+    image: Image.Image,
+    media_format: str,
+) -> tuple[bytes, Image.Image]:
+    orientation = image.getexif().get(_EXIF_ORIENTATION, 1)
+    if orientation in (None, 1):
+        return original, image.copy()
+
+    normalized = ImageOps.exif_transpose(image)
+    normalized_bytes = _encode_image(normalized, media_format)
+    return normalized_bytes, normalized
+
+
+def _encode_image(image: Image.Image, media_format: str) -> bytes:
+    output = BytesIO()
+    save_format = "JPEG" if media_format == "jpeg" else media_format.upper()
+    image_to_save = image.convert("RGB") if media_format == "jpeg" else image
+    image_to_save.save(output, format=save_format)
+    return output.getvalue()
+
+
+def _write_thumbnail(
+    project: Project,
+    media_hash: str,
+    image: Image.Image,
+    thumbnail_max_edge: int,
+) -> None:
+    thumbs_dir = project.root / "media" / "thumbs"
+    thumbs_dir.mkdir(parents=True, exist_ok=True)
+    final = thumbs_dir / f"{media_hash}.jpg"
+    if final.exists():
+        return
+
+    thumbnail = image.convert("RGB")
+    thumbnail.thumbnail((thumbnail_max_edge, thumbnail_max_edge), Image.Resampling.LANCZOS)
+    tmp = thumbs_dir / f"{media_hash}.{os.getpid()}.tmp"
+    thumbnail.save(tmp, format="JPEG", quality=80)
+    os.replace(tmp, final)
