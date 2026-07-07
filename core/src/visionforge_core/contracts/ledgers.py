@@ -134,7 +134,9 @@ class DecisionChoice(StrictModel):
     @classmethod
     def _registered(cls, v: str) -> str:
         if v not in REASON_CODES:
-            raise ValueError(f"未登記的理由碼「{v}」——擴充請修訂 REASON_CODES（確定性優於自由文字）")
+            raise ValueError(
+                f"未登記的理由碼「{v}」——擴充請修訂 REASON_CODES（確定性優於自由文字）"
+            )
         return v
 
 
