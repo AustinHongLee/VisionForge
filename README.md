@@ -17,7 +17,8 @@
 | 文件工程（R1 → R2 → 憲法 → 分工協議 → 文件治理） | ✅ 完成 |
 | ADR-0002 技術棧、ADR-0003 Claim Schema | ✅ 已採納 |
 | repo 骨架＋核心契約（`core/.../contracts/claims.py`，17 測試綠燈）＋CI 守門 | ✅ 完成 |
-| 票-0001（Electron 殼＋Bridge）→ Codex | 🟨 已發出，等施工 |
+| 票-0001（Electron 殼＋Bridge） | ✅ 交付並通過審查，已合併 |
+| 票-0002（UI 殼安全加固，L0 免審）→ Codex | 🟨 已發出，等施工 |
 | 帳本 Schema（Decision／Cost／血統——B1 誠實本體） | ⬜ 下一步（Claude） |
 
 ## 給 AI Agent 的入場須知
