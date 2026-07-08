@@ -41,7 +41,7 @@
 | [ADR-0004-帳本Schema-v1.md](02-ADR/ADR-0004-帳本Schema-v1.md) | ADR | — | 🟩 已採納 | Decision/Cost/ReviewEvent/Manifest/黃金集帳本；含本 ADR 之 commit 已合併（b862c71），視同採納 |
 | [ADR-0005-儲存層設計.md](02-ADR/ADR-0005-儲存層設計.md) | ADR | — | 🟩 已採納 | 文件式 SQLite＋append-only repos＋遷移＋blob 庫；含本 ADR 之 commit 已合併（661f5c1），視同採納 |
 | [ADR-0006-匯入正規化與媒體身分政策.md](02-ADR/ADR-0006-匯入正規化與媒體身分政策.md) | ADR | — | 🟩 已採納 | 媒體身分＝入庫位元組雜湊；EXIF 轉正 Policy B；Pillow 釘版；縮圖規格；隨票-0003 合併（4ab83f7），視同採納 |
-| [ADR-0007-校準引擎.md](02-ADR/ADR-0007-校準引擎.md) | ADR | — | 🟨 提案 | 全域先驗＋逐類收縮估計、信賴度分級（none/low/high）與路由、CalibrationSnapshot 快照契約（R2 9.2）；**合併即視同採納** |
+| [ADR-0007-校準引擎.md](02-ADR/ADR-0007-校準引擎.md) | ADR | — | 🟩 已採納 | 全域先驗＋逐類收縮估計、信賴度分級（none/low/high）與路由、CalibrationSnapshot 快照契約（R2 9.2）；採納 8c01796，已實作合併 ad3914c（PR #4，83 測試綠） |
 | [20260707-claim-schema-草案.md](05-討論/20260707-claim-schema-草案.md) | 討論 | v0.1 | ⬛ 已歸檔 | 已落地於 ADR-0003＋契約程式碼 |
 | [票-0001-UI殼與Bridge.md](06-規格票/票-0001-UI殼與Bridge.md) | 規格票 | — | ⬛ 已結案 | 審查通過（Blocking 0）；Non-blocking 5 項移票-0002 |
 | [票-0002-UI殼安全加固.md](06-規格票/票-0002-UI殼安全加固.md) | 規格票 | — | ⬛ 已結案 | L0 合併＋L1 抽查通過；openExternal 白名單、導航鎖、CSP、depcruise 擴充 |
