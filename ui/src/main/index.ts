@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, Notification, shell } from "electr
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { BRIDGE_CHANNELS } from "../shared/ipcChannels";
+import { SidecarManager } from "./sidecar";
 import { isSafeExternalUrl } from "./urlPolicy";
 
 type DesktopPlatform = "win32" | "darwin" | "linux";
@@ -16,6 +17,15 @@ const getDesktopPlatform = (): DesktopPlatform => {
   console.warn(`Unsupported desktop platform "${platform}", falling back to "linux".`);
   return "linux";
 };
+
+let sidecarManager: SidecarManager | null = null;
+let apiBaseUrl: string | null = null;
+
+const getProjectPath = (): string =>
+  process.env.VISIONFORGE_PROJECT ?? join(app.getPath("userData"), "dev-project");
+
+const formatError = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
 
 const isAllowedAppNavigation = (targetUrl: string, appEntryUrl: string): boolean => {
   try {
@@ -32,7 +42,7 @@ const isAllowedAppNavigation = (targetUrl: string, appEntryUrl: string): boolean
   }
 };
 
-const registerBridgeHandlers = (): void => {
+const registerBridgeHandlers = (getApiBaseUrl: () => string): void => {
   ipcMain.handle(BRIDGE_CHANNELS.pickDirectory, async () => {
     const result = await dialog.showOpenDialog({
       properties: ["openDirectory"],
@@ -60,6 +70,7 @@ const registerBridgeHandlers = (): void => {
 
   ipcMain.handle(BRIDGE_CHANNELS.getAppVersion, () => app.getVersion());
   ipcMain.handle(BRIDGE_CHANNELS.getPlatform, () => getDesktopPlatform());
+  ipcMain.handle(BRIDGE_CHANNELS.getApiBaseUrl, () => getApiBaseUrl());
 };
 
 const createWindow = (): void => {
@@ -101,8 +112,51 @@ const createWindow = (): void => {
   void mainWindow.loadFile(rendererHtmlPath);
 };
 
-app.whenReady().then(() => {
-  registerBridgeHandlers();
+const focusExistingWindow = (): void => {
+  const [window] = BrowserWindow.getAllWindows();
+  if (window === undefined) {
+    return;
+  }
+  if (window.isMinimized()) {
+    window.restore();
+  }
+  window.focus();
+};
+
+const startSidecar = async (): Promise<string> => {
+  sidecarManager = new SidecarManager({
+    projectPath: getProjectPath(),
+  });
+  return sidecarManager.start();
+};
+
+const boot = async (): Promise<void> => {
+  if (!app.requestSingleInstanceLock()) {
+    app.quit();
+    return;
+  }
+
+  app.on("second-instance", () => {
+    focusExistingWindow();
+  });
+
+  try {
+    apiBaseUrl = await startSidecar();
+  } catch (error) {
+    dialog.showErrorBox(
+      "VisionForge API 啟動失敗",
+      `本機 Python sidecar 沒有通過健康檢查：${formatError(error)}`,
+    );
+    app.quit();
+    return;
+  }
+
+  registerBridgeHandlers(() => {
+    if (apiBaseUrl === null) {
+      throw new Error("VisionForge API sidecar is not ready.");
+    }
+    return apiBaseUrl;
+  });
   createWindow();
 
   app.on("activate", () => {
@@ -110,6 +164,14 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+};
+
+app.whenReady().then(() => {
+  void boot();
+});
+
+app.on("will-quit", () => {
+  sidecarManager?.stop();
 });
 
 app.on("window-all-closed", () => {

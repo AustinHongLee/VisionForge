@@ -10,6 +10,7 @@ const bridge: DesktopBridge = {
   openExternal: (url) => ipcRenderer.invoke(BRIDGE_CHANNELS.openExternal, url),
   getAppVersion: () => ipcRenderer.invoke(BRIDGE_CHANNELS.getAppVersion),
   getPlatform: () => ipcRenderer.invoke(BRIDGE_CHANNELS.getPlatform),
+  getApiBaseUrl: () => ipcRenderer.invoke(BRIDGE_CHANNELS.getApiBaseUrl),
 };
 
 contextBridge.exposeInMainWorld("bridge", bridge);

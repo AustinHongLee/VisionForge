@@ -4,4 +4,5 @@ export interface DesktopBridge {
   openExternal(url: string): Promise<void>;
   getAppVersion(): Promise<string>;
   getPlatform(): Promise<"win32" | "darwin" | "linux">;
+  getApiBaseUrl(): Promise<string>;
 }

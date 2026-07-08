@@ -11,6 +11,7 @@ describe("App", () => {
     openExternal: vi.fn(),
     getAppVersion: vi.fn(),
     getPlatform: vi.fn(),
+    getApiBaseUrl: vi.fn(),
   };
 
   beforeEach(() => {
