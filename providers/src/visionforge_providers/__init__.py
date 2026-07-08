@@ -4,3 +4,7 @@
 它們實作 core 的 provisional 介面 `visionforge_core.providers.VisionProvider`，
 把原生輸出正規化成統一 Claim。依賴方向 providers→core（憲法 D13）。
 """
+
+from visionforge_providers.fixture import FixtureProvider
+
+__all__ = ["FixtureProvider"]
