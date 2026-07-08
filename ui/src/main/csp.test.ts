@@ -11,12 +11,12 @@ const readCsp = (): string => {
 };
 
 describe("renderer CSP", () => {
-  it("keeps the ticket-0002 shell policy and only adds loopback connect-src", () => {
+  it("keeps the ticket-0002 shell policy and only adds loopback API/media sources", () => {
     expect(readCsp().split("; ")).toEqual([
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self'",
-      "img-src 'self' data:",
+      "img-src 'self' data: http://127.0.0.1:*",
       "connect-src 'self' ws: http://127.0.0.1:*",
     ]);
   });

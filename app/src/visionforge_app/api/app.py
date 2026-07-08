@@ -9,6 +9,7 @@ from typing import Annotated, Literal
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from starlette.middleware.cors import CORSMiddleware
 from visionforge_core.contracts import Claim, Concept, MediaRecord, MediaSource
 from visionforge_core.providers import InferenceRequest, VisionProvider
 from visionforge_core.storage import Project, open_project
@@ -39,10 +40,20 @@ class InferResponse(BaseModel):
     provider_id: str
 
 
+_LOCAL_RENDERER_ORIGIN_RE = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+
+
 def create_app(project: Project, provider: VisionProvider | None = None) -> FastAPI:
     """建立可測的 FastAPI app；不在 import 時啟動服務。"""
 
     app = FastAPI(title="VisionForge local API")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_headers=["content-type"],
+        allow_methods=["GET", "POST"],
+        allow_origin_regex=_LOCAL_RENDERER_ORIGIN_RE,
+        allow_origins=["null"],
+    )
     active_provider = provider or FixtureProvider()
     project_root = project.root
 
