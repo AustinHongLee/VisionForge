@@ -3,17 +3,18 @@ name = "visionforge-workspace"
 version = "0.0.0"
 description = "VisionForge monorepo 工作區根（不含程式碼，只管工具鏈）"
 requires-python = ">=3.12"
-dependencies = ["visionforge-core", "visionforge-app"]
+dependencies = ["visionforge-core", "visionforge-app", "visionforge-providers"]
 
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["core", "app"]
+members = ["core", "app", "providers"]
 
 [tool.uv.sources]
 visionforge-core = { workspace = true }
 visionforge-app = { workspace = true }
+visionforge-providers = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -32,4 +33,5 @@ select = ["E", "F", "W", "I", "UP", "B"]
 ignore = ["UP017", "UP042"]
 
 [tool.pytest.ini_options]
-testpaths = ["core/tests", "app/tests"]
+addopts = ["--import-mode=importlib"]
+testpaths = ["core/tests", "app/tests", "providers/tests"]

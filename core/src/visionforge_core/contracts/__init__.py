@@ -47,6 +47,14 @@ from visionforge_core.contracts.ledgers import (
     ReviewEvent,
 )
 from visionforge_core.contracts.media import MediaFormat, MediaRecord, MediaSource, SourceKind
+from visionforge_core.contracts.providers import (
+    CostProfile,
+    Locality,
+    PromptMode,
+    ProviderCapability,
+    ProviderRole,
+    VisionTask,
+)
 
 __all__ = [
     "REASON_CODES",
@@ -66,6 +74,7 @@ __all__ = [
     "CostAgent",
     "CostEntry",
     "CostMeasurement",
+    "CostProfile",
     "DatasetVersionManifest",
     "DecisionChoice",
     "DecisionOutcome",
@@ -75,6 +84,7 @@ __all__ = [
     "InputRef",
     "Keypoints",
     "Label",
+    "Locality",
     "ManifestEntry",
     "MaskRef",
     "MediaFormat",
@@ -85,12 +95,16 @@ __all__ = [
     "PolicyRef",
     "Polygon",
     "Producer",
+    "PromptMode",
     "ProvenanceSummary",
+    "ProviderCapability",
+    "ProviderRole",
     "Reliability",
     "Review",
     "ReviewEvent",
     "ReviewStatus",
     "SourceKind",
     "UnknownGeometry",
+    "VisionTask",
     "WholeImage",
 ]
