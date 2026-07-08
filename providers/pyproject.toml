@@ -1,0 +1,16 @@
+[project]
+name = "visionforge-providers"
+version = "0.1.0"
+description = "VisionForge Vision Provider 實作（userland；依賴方向 providers→core，ADR-0008）"
+requires-python = ">=3.12"
+dependencies = ["visionforge-core"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/visionforge_providers"]
+
+[tool.uv.sources]
+visionforge-core = { workspace = true }

@@ -1531,6 +1531,107 @@
       "title": "ProvenanceSummary",
       "type": "object"
     },
+    "ProviderCapability": {
+      "additionalProperties": false,
+      "description": "Provider 機器可讀的能力自我聲明；路由與 UI 組裝的依據。",
+      "properties": {
+        "cost_profile": {
+          "enum": [
+            "free_local",
+            "local_compute",
+            "api_metered",
+            "api_flat"
+          ],
+          "title": "Cost Profile",
+          "type": "string"
+        },
+        "locality": {
+          "enum": [
+            "local",
+            "cloud"
+          ],
+          "title": "Locality",
+          "type": "string"
+        },
+        "promptable_by": {
+          "items": {
+            "enum": [
+              "text",
+              "box",
+              "point",
+              "example",
+              "none"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Promptable By",
+          "type": "array"
+        },
+        "provider_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "reproducible": {
+          "title": "Reproducible",
+          "type": "boolean"
+        },
+        "role": {
+          "enum": [
+            "teacher",
+            "student"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "tasks": {
+          "items": {
+            "enum": [
+              "detect",
+              "segment",
+              "classify",
+              "describe",
+              "ocr",
+              "keypoints"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Tasks",
+          "type": "array"
+        },
+        "trainable": {
+          "title": "Trainable",
+          "type": "boolean"
+        },
+        "version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider_id",
+        "version",
+        "role",
+        "locality",
+        "tasks",
+        "promptable_by",
+        "reproducible",
+        "trainable",
+        "cost_profile"
+      ],
+      "title": "ProviderCapability",
+      "type": "object"
+    },
     "Review": {
       "additionalProperties": false,
       "properties": {

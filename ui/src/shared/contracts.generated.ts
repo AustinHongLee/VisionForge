@@ -183,6 +183,28 @@ export type SchemaVersion8 = "1.0";
 export type Detail1 = string;
 export type Kind4 = "file" | "folder" | "clipboard" | "video_frame" | "pdf_page" | "camera" | "screen" | "url";
 export type WidthPx1 = number;
+export type CostProfile = "free_local" | "local_compute" | "api_metered" | "api_flat";
+export type Locality = "local" | "cloud";
+/**
+ * @minItems 1
+ */
+export type PromptableBy = [
+  "text" | "box" | "point" | "example" | "none",
+  ...("text" | "box" | "point" | "example" | "none")[]
+];
+export type ProviderId2 = string;
+export type Reproducible = boolean;
+export type Role = "teacher" | "student";
+export type SchemaVersion9 = "1.0";
+/**
+ * @minItems 1
+ */
+export type Tasks = [
+  "detect" | "segment" | "classify" | "describe" | "ocr" | "keypoints",
+  ...("detect" | "segment" | "classify" | "describe" | "ocr" | "keypoints")[]
+];
+export type Trainable = boolean;
+export type Version1 = string;
 export type Actor2 = string;
 export type At3 = string;
 export type ClaimRef1 = string;
@@ -192,7 +214,7 @@ export type EventId = string;
 export type ReviewStatus1 =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
 export type LabelRef1 = string | null;
-export type SchemaVersion9 = "1.0";
+export type SchemaVersion10 = "1.0";
 export type ReviewStatus2 =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
 
@@ -637,6 +659,24 @@ export interface MediaSource {
   kind: Kind4;
 }
 /**
+ * Provider 機器可讀的能力自我聲明；路由與 UI 組裝的依據。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "ProviderCapability".
+ */
+export interface ProviderCapability {
+  cost_profile: CostProfile;
+  locality: Locality;
+  promptable_by: PromptableBy;
+  provider_id: ProviderId2;
+  reproducible: Reproducible;
+  role: Role;
+  schema_version?: SchemaVersion9;
+  tasks: Tasks;
+  trainable: Trainable;
+  version: Version1;
+}
+/**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
  * via the `definition` "Review".
  */
@@ -663,6 +703,6 @@ export interface ReviewEvent {
   event_id: EventId;
   from_status: ReviewStatus1;
   label_ref?: LabelRef1;
-  schema_version?: SchemaVersion9;
+  schema_version?: SchemaVersion10;
   to_status: ReviewStatus2;
 }
