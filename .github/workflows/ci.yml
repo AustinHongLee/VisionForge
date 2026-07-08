@@ -31,6 +31,8 @@ jobs:
         run: uv run ruff check core
       - name: 契約測試
         run: uv run pytest core/tests -q
+      - name: 契約 Schema 漂移檢查
+        run: uv run python scripts/export_contract_schema.py --check
 
   app:
     name: app 服務（ruff + pytest）
@@ -71,3 +73,5 @@ jobs:
         run: pnpm test
       - name: Dependency cruise
         run: pnpm depcruise
+      - name: TS 契約型別漂移檢查
+        run: pnpm run check:contracts

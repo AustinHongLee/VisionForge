@@ -1,0 +1,1550 @@
+{
+  "$defs": {
+    "BBox": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "bbox",
+          "default": "bbox",
+          "title": "Type",
+          "type": "string"
+        },
+        "x1": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X1",
+          "type": "number"
+        },
+        "x2": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X2",
+          "type": "number"
+        },
+        "y1": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y1",
+          "type": "number"
+        },
+        "y2": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y2",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x1",
+        "y1",
+        "x2",
+        "y2"
+      ],
+      "title": "BBox",
+      "type": "object"
+    },
+    "CandidateProvider": {
+      "additionalProperties": false,
+      "description": "候選 Provider 的證據列（A6：沒有證據的選擇等於沒發生）。",
+      "properties": {
+        "audition_score": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audition Score"
+        },
+        "capability_ok": {
+          "title": "Capability Ok",
+          "type": "boolean"
+        },
+        "estimated_cost_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Cost Ref"
+        },
+        "provider_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "provider_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Provider Version",
+          "type": "string"
+        },
+        "rejected_reason": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rejected Reason"
+        }
+      },
+      "required": [
+        "provider_id",
+        "provider_version",
+        "capability_ok"
+      ],
+      "title": "CandidateProvider",
+      "type": "object"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "description": "單一實例的陳述。Claim 是有出處的意見，不是事實（憲法 §3）。",
+      "properties": {
+        "assertion": {
+          "enum": [
+            "presence",
+            "absence"
+          ],
+          "title": "Assertion",
+          "type": "string"
+        },
+        "claim_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "concept": {
+          "$ref": "#/$defs/Concept"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "geometry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBox"
+            },
+            {
+              "$ref": "#/$defs/Polygon"
+            },
+            {
+              "$ref": "#/$defs/MaskRef"
+            },
+            {
+              "$ref": "#/$defs/Keypoints"
+            },
+            {
+              "$ref": "#/$defs/WholeImage"
+            },
+            {
+              "$ref": "#/$defs/UnknownGeometry"
+            }
+          ],
+          "title": "Geometry"
+        },
+        "provider_extra": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider Extra"
+        },
+        "review": {
+          "$ref": "#/$defs/Review",
+          "default": {
+            "reviewed_at": null,
+            "reviewer": null,
+            "status": "draft"
+          }
+        }
+      },
+      "required": [
+        "claim_id",
+        "geometry",
+        "concept",
+        "confidence"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "Concept": {
+      "additionalProperties": false,
+      "properties": {
+        "mapping_provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConceptMappingProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "raw_text": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Raw Text",
+          "type": "string"
+        },
+        "taxonomy_node_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Taxonomy Node Id"
+        }
+      },
+      "required": [
+        "raw_text"
+      ],
+      "title": "Concept",
+      "type": "object"
+    },
+    "ConceptMappingProvenance": {
+      "additionalProperties": false,
+      "description": "「rusty bolt 算不算本專案的『鏽蝕』」——映射本身也是有出處的意見。",
+      "properties": {
+        "actor": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Actor",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "human",
+            "rule",
+            "model"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "mapped_at": {
+          "format": "date-time",
+          "title": "Mapped At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "actor",
+        "mapped_at"
+      ],
+      "title": "ConceptMappingProvenance",
+      "type": "object"
+    },
+    "Confidence": {
+      "additionalProperties": false,
+      "description": "分流邏輯只准讀 calibrated；reliability 為 none/low 時憲法規定一律人審。",
+      "properties": {
+        "calibrated": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calibrated"
+        },
+        "calibration_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calibration Ref"
+        },
+        "raw": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Raw",
+          "type": "number"
+        },
+        "reliability": {
+          "enum": [
+            "none",
+            "low",
+            "high"
+          ],
+          "title": "Reliability",
+          "type": "string"
+        }
+      },
+      "required": [
+        "raw"
+      ],
+      "title": "Confidence",
+      "type": "object"
+    },
+    "CostAgent": {
+      "additionalProperties": false,
+      "description": "誰產生了這筆消耗——Provider 或人（C5：人工有價）。",
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "provider",
+            "human"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "title": "CostAgent",
+      "type": "object"
+    },
+    "CostEntry": {
+      "additionalProperties": false,
+      "description": "一筆消耗分錄。estimate 與 actual 是兩筆獨立分錄，actual 以 estimate_ref\n回指配對——預測必可證偽（C6），對帳查詢由此成立。",
+      "properties": {
+        "agent": {
+          "$ref": "#/$defs/CostAgent"
+        },
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "cost_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Cost Id",
+          "type": "string"
+        },
+        "estimate_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimate Ref"
+        },
+        "measurements": {
+          "items": {
+            "$ref": "#/$defs/CostMeasurement"
+          },
+          "minItems": 1,
+          "title": "Measurements",
+          "type": "array"
+        },
+        "phase": {
+          "enum": [
+            "estimate",
+            "actual"
+          ],
+          "title": "Phase",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "subject": {
+          "$ref": "#/$defs/InputRef"
+        }
+      },
+      "required": [
+        "cost_id",
+        "at",
+        "phase",
+        "subject",
+        "agent",
+        "measurements"
+      ],
+      "title": "CostEntry",
+      "type": "object"
+    },
+    "CostMeasurement": {
+      "additionalProperties": false,
+      "description": "計量單位可插拔（F3）：unit 是登記名（usd／twd／tokens_in／seconds／gpu_seconds…）。\n\n金額用 Decimal 並以字串序列化——錢進浮點數是十年後對不了帳的經典錯誤。",
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "unit": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "amount"
+      ],
+      "title": "CostMeasurement",
+      "type": "object"
+    },
+    "DatasetVersionManifest": {
+      "additionalProperties": false,
+      "description": "一個 Dataset 版本 = 一份清單，不是一份拷貝。回滾 = 以任一舊版為 parent\n開新版；歷史版本永不修改、永不刪除（D5）。黃金集項目不得出現在此（D8）。",
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/$defs/ManifestEntry"
+          },
+          "title": "Entries",
+          "type": "array"
+        },
+        "gate_decision_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gate Decision Ref"
+        },
+        "note": {
+          "default": "",
+          "maxLength": 512,
+          "title": "Note",
+          "type": "string"
+        },
+        "parent_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Ref"
+        },
+        "provenance": {
+          "$ref": "#/$defs/ProvenanceSummary"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "version_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Version Id",
+          "type": "string"
+        },
+        "version_number": {
+          "minimum": 1,
+          "title": "Version Number",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "version_id",
+        "version_number",
+        "created_at",
+        "entries",
+        "provenance"
+      ],
+      "title": "DatasetVersionManifest",
+      "type": "object"
+    },
+    "DecisionChoice": {
+      "additionalProperties": false,
+      "properties": {
+        "reason_code": {
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target",
+        "reason_code"
+      ],
+      "title": "DecisionChoice",
+      "type": "object"
+    },
+    "DecisionOutcome": {
+      "additionalProperties": false,
+      "description": "決策的實際結果——獨立追加記錄（append-only：結果不回寫原決策）。",
+      "properties": {
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "decision_ref": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Decision Ref",
+          "type": "string"
+        },
+        "detail": {
+          "default": "",
+          "maxLength": 1024,
+          "title": "Detail",
+          "type": "string"
+        },
+        "outcome_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Outcome Id",
+          "type": "string"
+        },
+        "produced_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/InputRef"
+          },
+          "title": "Produced Refs",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "success",
+            "failure",
+            "cancelled",
+            "partial"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "outcome_id",
+        "decision_ref",
+        "at",
+        "status"
+      ],
+      "title": "DecisionOutcome",
+      "type": "object"
+    },
+    "DecisionRecord": {
+      "additionalProperties": false,
+      "description": "Orchestrator 的不可變決策記錄。五不變量（憲法 §4.4）：\n源自政策、附證據、經計量、可重放、可被人覆寫——前四者由本結構承載，\n第五者由 kind=human_override 的新記錄實現（不修改原記錄）。",
+      "properties": {
+        "actor": {
+          "default": "orchestrator",
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Actor",
+          "type": "string"
+        },
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "candidates": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CandidateProvider"
+          },
+          "title": "Candidates",
+          "type": "array"
+        },
+        "choice": {
+          "$ref": "#/$defs/DecisionChoice"
+        },
+        "decision_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Decision Id",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/InputRef"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/InputRef"
+          },
+          "minItems": 1,
+          "title": "Inputs",
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "invoke_provider",
+            "route_claim",
+            "escalate_human",
+            "cache_reuse",
+            "gate_verdict",
+            "human_override"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "overrides_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Overrides Ref"
+        },
+        "policy": {
+          "$ref": "#/$defs/PolicyRef"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "decision_id",
+        "at",
+        "kind",
+        "policy",
+        "inputs",
+        "choice"
+      ],
+      "title": "DecisionRecord",
+      "type": "object"
+    },
+    "GoldenSetEntry": {
+      "additionalProperties": false,
+      "description": "黃金集登記：只增與除役，永不刪除；且永不進入任何訓練 manifest（D8）。",
+      "properties": {
+        "added_at": {
+          "format": "date-time",
+          "title": "Added At",
+          "type": "string"
+        },
+        "added_by": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Added By",
+          "type": "string"
+        },
+        "entry_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Entry Id",
+          "type": "string"
+        },
+        "label_ref": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Label Ref",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "retired_reason": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retired Reason"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "status": {
+          "default": "active",
+          "enum": [
+            "active",
+            "retired"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entry_id",
+        "media_hash",
+        "label_ref",
+        "added_by",
+        "added_at"
+      ],
+      "title": "GoldenSetEntry",
+      "type": "object"
+    },
+    "InferenceRun": {
+      "additionalProperties": false,
+      "description": "一次 Provider 調用的批次紀錄。出處與成本記在 Run，審核以 Claim 為單位。",
+      "properties": {
+        "claims": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Claim"
+          },
+          "title": "Claims",
+          "type": "array"
+        },
+        "cost_ref": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Cost Ref",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "decision_ref": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Decision Ref",
+          "type": "string"
+        },
+        "duration_ms": {
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "producer": {
+          "$ref": "#/$defs/Producer"
+        },
+        "run_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "subject": {
+          "$ref": "#/$defs/MediaSubject"
+        },
+        "task": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "subject",
+        "producer",
+        "task",
+        "created_at",
+        "duration_ms",
+        "cost_ref",
+        "decision_ref"
+      ],
+      "title": "InferenceRun",
+      "type": "object"
+    },
+    "InputRef": {
+      "additionalProperties": false,
+      "description": "異質參照：帳本之間互相指認的統一形式。",
+      "properties": {
+        "id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "media",
+            "claim",
+            "run",
+            "label",
+            "dataset_version",
+            "golden_entry",
+            "batch",
+            "report",
+            "calibration",
+            "cost",
+            "decision",
+            "review_event",
+            "training_run",
+            "export_job",
+            "data_job"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "title": "InputRef",
+      "type": "object"
+    },
+    "Keypoints": {
+      "additionalProperties": false,
+      "description": "骨架定義由任務模組擁有（ADR-0003 裁決 #3），此處只存登記名。",
+      "properties": {
+        "points": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "visible": {
+                "default": true,
+                "title": "Visible",
+                "type": "boolean"
+              },
+              "x": {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "title": "X",
+                "type": "number"
+              },
+              "y": {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "title": "Y",
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "title": "KeypointPoint",
+            "type": "object"
+          },
+          "minItems": 1,
+          "title": "Points",
+          "type": "array"
+        },
+        "skeleton_ref": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "Skeleton Ref",
+          "type": "string"
+        },
+        "type": {
+          "const": "keypoints",
+          "default": "keypoints",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skeleton_ref",
+        "points"
+      ],
+      "title": "Keypoints",
+      "type": "object"
+    },
+    "Label": {
+      "additionalProperties": false,
+      "description": "不可變記錄；唯一誕生途徑是審核狀態機（服務層強制，本類記載其產物）。\n\n設計理由（ADR-0003）：Label 與 Claim 分離儲存，Claim 永遠保存 Provider 原始輸出，\n兩者對照即可量測 Provider 真實錯誤率——這是盲審與防線五的量測基礎。",
+      "properties": {
+        "assertion": {
+          "enum": [
+            "presence",
+            "absence"
+          ],
+          "title": "Assertion",
+          "type": "string"
+        },
+        "claim_ref": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Claim Ref",
+          "type": "string"
+        },
+        "final_concept": {
+          "$ref": "#/$defs/Concept"
+        },
+        "final_geometry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBox"
+            },
+            {
+              "$ref": "#/$defs/Polygon"
+            },
+            {
+              "$ref": "#/$defs/MaskRef"
+            },
+            {
+              "$ref": "#/$defs/Keypoints"
+            },
+            {
+              "$ref": "#/$defs/WholeImage"
+            },
+            {
+              "$ref": "#/$defs/UnknownGeometry"
+            }
+          ],
+          "title": "Final Geometry"
+        },
+        "label_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Label Id",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "reviewed_at": {
+          "format": "date-time",
+          "title": "Reviewed At",
+          "type": "string"
+        },
+        "reviewer": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Reviewer",
+          "type": "string"
+        },
+        "run_ref": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Run Ref",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_status": {
+          "enum": [
+            "approved",
+            "edited_approved"
+          ],
+          "title": "Source Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label_id",
+        "claim_ref",
+        "run_ref",
+        "media_hash",
+        "assertion",
+        "final_geometry",
+        "final_concept",
+        "reviewer",
+        "reviewed_at",
+        "source_status"
+      ],
+      "title": "Label",
+      "type": "object"
+    },
+    "ManifestEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "label_refs": {
+          "default": [],
+          "items": {
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+            "type": "string"
+          },
+          "title": "Label Refs",
+          "type": "array"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "split": {
+          "enum": [
+            "train",
+            "val"
+          ],
+          "title": "Split",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_hash",
+        "split"
+      ],
+      "title": "ManifestEntry",
+      "type": "object"
+    },
+    "MaskRef": {
+      "additionalProperties": false,
+      "description": "mask 本體不內嵌，走內容雜湊定址檔案（ADR-0003 裁決 #1：RLE/COCO）。",
+      "properties": {
+        "format": {
+          "const": "rle_coco",
+          "default": "rle_coco",
+          "title": "Format",
+          "type": "string"
+        },
+        "mask_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Mask Hash",
+          "type": "string"
+        },
+        "type": {
+          "const": "mask_ref",
+          "default": "mask_ref",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mask_hash"
+      ],
+      "title": "MaskRef",
+      "type": "object"
+    },
+    "MediaRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "byte_size": {
+          "exclusiveMinimum": 0,
+          "title": "Byte Size",
+          "type": "integer"
+        },
+        "exif_normalized": {
+          "title": "Exif Normalized",
+          "type": "boolean"
+        },
+        "format": {
+          "enum": [
+            "jpeg",
+            "png",
+            "webp",
+            "bmp",
+            "tiff"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "height_px": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Height Px",
+          "type": "integer"
+        },
+        "imported_at": {
+          "format": "date-time",
+          "title": "Imported At",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/MediaSource"
+        },
+        "width_px": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Width Px",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "media_hash",
+        "width_px",
+        "height_px",
+        "format",
+        "byte_size",
+        "imported_at",
+        "source",
+        "exif_normalized"
+      ],
+      "title": "MediaRecord",
+      "type": "object"
+    },
+    "MediaSource": {
+      "additionalProperties": false,
+      "description": "來源留痕：血統從匯入那一刻開始。",
+      "properties": {
+        "detail": {
+          "default": "",
+          "maxLength": 1024,
+          "title": "Detail",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "file",
+            "folder",
+            "clipboard",
+            "video_frame",
+            "pdf_page",
+            "camera",
+            "screen",
+            "url"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "MediaSource",
+      "type": "object"
+    },
+    "MediaSubject": {
+      "additionalProperties": false,
+      "description": "像素尺寸是 normalized 座標的換算基準——綁在 Run 上，杜絕座標系歧義。",
+      "properties": {
+        "height_px": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Height Px",
+          "type": "integer"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "width_px": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "title": "Width Px",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "media_hash",
+        "width_px",
+        "height_px"
+      ],
+      "title": "MediaSubject",
+      "type": "object"
+    },
+    "Point": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "Point",
+      "type": "object"
+    },
+    "PolicyRef": {
+      "additionalProperties": false,
+      "description": "生效政策的快照參照——重放時必須能指認當時的政策（D3）。",
+      "properties": {
+        "policy_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Policy Hash",
+          "type": "string"
+        },
+        "policy_label": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Policy Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_hash",
+        "policy_label"
+      ],
+      "title": "PolicyRef",
+      "type": "object"
+    },
+    "Polygon": {
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "items": {
+            "$ref": "#/$defs/Point"
+          },
+          "minItems": 3,
+          "title": "Points",
+          "type": "array"
+        },
+        "type": {
+          "const": "polygon",
+          "default": "polygon",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "Polygon",
+      "type": "object"
+    },
+    "Producer": {
+      "additionalProperties": false,
+      "description": "PR6：版本即身分。提示式 Provider 的 prompt_ref 必填由 adapter 層強制。",
+      "properties": {
+        "params_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Params Hash",
+          "type": "string"
+        },
+        "prompt_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Ref"
+        },
+        "provider_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "provider_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Provider Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider_id",
+        "provider_version",
+        "params_hash"
+      ],
+      "title": "Producer",
+      "type": "object"
+    },
+    "ProvenanceSummary": {
+      "additionalProperties": false,
+      "description": "血統成分表（防線二）：本版資料的出身統計快照。",
+      "properties": {
+        "human": {
+          "minimum": 0,
+          "title": "Human",
+          "type": "integer"
+        },
+        "imported": {
+          "minimum": 0,
+          "title": "Imported",
+          "type": "integer"
+        },
+        "machine_assisted": {
+          "minimum": 0,
+          "title": "Machine Assisted",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "human",
+        "machine_assisted",
+        "imported"
+      ],
+      "title": "ProvenanceSummary",
+      "type": "object"
+    },
+    "Review": {
+      "additionalProperties": false,
+      "properties": {
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "reviewer": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewer"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "queued_fast",
+            "queued_detail",
+            "queued_manual",
+            "approved",
+            "edited_approved",
+            "rejected"
+          ],
+          "title": "ReviewStatus",
+          "type": "string"
+        }
+      },
+      "title": "Review",
+      "type": "object"
+    },
+    "ReviewEvent": {
+      "additionalProperties": false,
+      "description": "一次人為審核動作。Label 記結果，ReviewEvent 記行為——含否決與盲審。\n\ncontext=blind_audit／honeypot 是防線五的量測資料：盲審比對估計漏網錯誤率，\n蜜罐量測審核者當下狀態（R1 §9.3）。",
+      "properties": {
+        "actor": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Actor",
+          "type": "string"
+        },
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "claim_ref": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Claim Ref",
+          "type": "string"
+        },
+        "context": {
+          "default": "normal",
+          "enum": [
+            "normal",
+            "blind_audit",
+            "honeypot"
+          ],
+          "title": "Context",
+          "type": "string"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "event_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "from_status": {
+          "enum": [
+            "draft",
+            "queued_fast",
+            "queued_detail",
+            "queued_manual",
+            "approved",
+            "edited_approved",
+            "rejected"
+          ],
+          "title": "ReviewStatus",
+          "type": "string"
+        },
+        "label_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label Ref"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "to_status": {
+          "enum": [
+            "draft",
+            "queued_fast",
+            "queued_detail",
+            "queued_manual",
+            "approved",
+            "edited_approved",
+            "rejected"
+          ],
+          "title": "ReviewStatus",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "at",
+        "actor",
+        "claim_ref",
+        "from_status",
+        "to_status"
+      ],
+      "title": "ReviewEvent",
+      "type": "object"
+    },
+    "UnknownGeometry": {
+      "additionalProperties": true,
+      "description": "前向相容（F1）：未知幾何型別保留原文、標記不可解讀，不得丟棄。\n\n注意：已知型別若格式錯誤，必須報錯而非落入本類——否則壞資料會偽裝成未來資料。",
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "UnknownGeometry",
+      "type": "object"
+    },
+    "WholeImage": {
+      "additionalProperties": false,
+      "description": "圖級陳述（無幾何）；absence 斷言的唯一合法幾何。",
+      "properties": {
+        "type": {
+          "const": "whole_image",
+          "default": "whole_image",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "title": "WholeImage",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VisionForge Contracts",
+  "x-schema-version": "1.0"
+}
