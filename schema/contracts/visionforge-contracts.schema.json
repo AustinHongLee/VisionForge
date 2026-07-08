@@ -43,6 +43,92 @@
       "title": "BBox",
       "type": "object"
     },
+    "CalibrationMapping": {
+      "additionalProperties": false,
+      "description": "raw→calibrated 的單調階梯映射；points 依 raw 遞增、calibrated 非遞減。",
+      "properties": {
+        "points": {
+          "items": {
+            "$ref": "#/$defs/MappingPoint"
+          },
+          "minItems": 1,
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "points"
+      ],
+      "title": "CalibrationMapping",
+      "type": "object"
+    },
+    "CalibrationSnapshot": {
+      "additionalProperties": false,
+      "description": "一次校準的不可變快照；calibration_ref 指向它＝信賴度的可驗證背書。",
+      "properties": {
+        "calibration_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Calibration Id",
+          "type": "string"
+        },
+        "classes": {
+          "items": {
+            "$ref": "#/$defs/ClassCalibration"
+          },
+          "title": "Classes",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "global_threshold": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Global Threshold",
+          "type": "number"
+        },
+        "golden_manifest_ref": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Golden Manifest Ref",
+          "type": "string"
+        },
+        "method": {
+          "const": "shrinkage_eb_v1",
+          "default": "shrinkage_eb_v1",
+          "title": "Method",
+          "type": "string"
+        },
+        "precision_target": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Precision Target",
+          "type": "number"
+        },
+        "prior_strength": {
+          "exclusiveMinimum": 0.0,
+          "title": "Prior Strength",
+          "type": "number"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "calibration_id",
+        "created_at",
+        "precision_target",
+        "prior_strength",
+        "global_threshold",
+        "golden_manifest_ref"
+      ],
+      "title": "CalibrationSnapshot",
+      "type": "object"
+    },
     "CandidateProvider": {
       "additionalProperties": false,
       "description": "候選 Provider 的證據列（A6：沒有證據的選擇等於沒發生）。",
@@ -186,6 +272,64 @@
         "confidence"
       ],
       "title": "Claim",
+      "type": "object"
+    },
+    "ClassCalibration": {
+      "additionalProperties": false,
+      "description": "逐類校準結果。none 級不輸出映射、退回保守全域門檻（R2 9.2）。",
+      "properties": {
+        "concept_key": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Concept Key",
+          "type": "string"
+        },
+        "mapping": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CalibrationMapping"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "n_samples": {
+          "minimum": 0,
+          "title": "N Samples",
+          "type": "integer"
+        },
+        "reliability": {
+          "enum": [
+            "none",
+            "low",
+            "high"
+          ],
+          "title": "Reliability",
+          "type": "string"
+        },
+        "shrinkage_weight": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Shrinkage Weight",
+          "type": "number"
+        },
+        "threshold": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "concept_key",
+        "n_samples",
+        "threshold",
+        "shrinkage_weight",
+        "reliability"
+      ],
+      "title": "ClassCalibration",
       "type": "object"
     },
     "Concept": {
@@ -1064,6 +1208,30 @@
         "split"
       ],
       "title": "ManifestEntry",
+      "type": "object"
+    },
+    "MappingPoint": {
+      "additionalProperties": false,
+      "description": "等滲回歸斷點：raw 門檻 → 校準後信心（P(correct|raw) 的單調估計）。",
+      "properties": {
+        "calibrated": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Calibrated",
+          "type": "number"
+        },
+        "raw": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Raw",
+          "type": "number"
+        }
+      },
+      "required": [
+        "raw",
+        "calibrated"
+      ],
+      "title": "MappingPoint",
       "type": "object"
     },
     "MaskRef": {
