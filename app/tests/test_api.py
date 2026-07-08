@@ -49,6 +49,42 @@ def test_health(client: TestClient) -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_cors_allows_local_renderer_origin(client: TestClient) -> None:
+    response = client.options(
+        "/infer",
+        headers={
+            "Access-Control-Request-Headers": "content-type",
+            "Access-Control-Request-Method": "POST",
+            "Origin": "http://localhost:5173",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "POST" in response.headers["access-control-allow-methods"]
+    assert "content-type" in response.headers["access-control-allow-headers"].lower()
+
+
+def test_cors_allows_file_origin_for_packaged_renderer(client: TestClient) -> None:
+    response = client.get("/health", headers={"Origin": "null"})
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "null"
+
+
+def test_cors_rejects_non_local_origins(client: TestClient) -> None:
+    response = client.options(
+        "/infer",
+        headers={
+            "Access-Control-Request-Method": "POST",
+            "Origin": "https://example.com",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "access-control-allow-origin" not in response.headers
+
+
 def test_import_and_media_listing(client: TestClient) -> None:
     data = _jpeg_bytes()
 

@@ -62,6 +62,39 @@ describe("sidecar", () => {
     );
   });
 
+  it("uses VISIONFORGE_PYTHON from the current process environment", async () => {
+    const previousPython = process.env.VISIONFORGE_PYTHON;
+    process.env.VISIONFORGE_PYTHON = "python-from-process-env";
+
+    try {
+      const child = new FakeChildProcess();
+      const spawnProcess = vi.fn(() => child as unknown as ChildProcess);
+      const manager = new SidecarManager({
+        fetchHealth: vi.fn(async () => healthyResponse()),
+        pickPort: async () => 45_125,
+        projectPath: "C:/tmp/visionforge-project",
+        spawnProcess,
+      });
+
+      await expect(manager.start()).resolves.toBe("http://127.0.0.1:45125");
+      expect(spawnProcess).toHaveBeenCalledWith(
+        "python-from-process-env",
+        ["-m", "visionforge_app.api"],
+        expect.objectContaining({
+          env: expect.objectContaining({
+            VISIONFORGE_PYTHON: "python-from-process-env",
+          }),
+        }),
+      );
+    } finally {
+      if (previousPython === undefined) {
+        delete process.env.VISIONFORGE_PYTHON;
+      } else {
+        process.env.VISIONFORGE_PYTHON = previousPython;
+      }
+    }
+  });
+
   it("terminates the child process when health never becomes ready", async () => {
     const child = new FakeChildProcess();
     const manager = new SidecarManager({

@@ -80,17 +80,18 @@ export class SidecarManager {
     const port = this.options.port ?? (await (this.options.pickPort ?? pickFreeLoopbackPort)());
     const baseUrl = toApiBaseUrl(port);
     const spawnProcess: SpawnProcess = this.options.spawnProcess ?? spawn;
+    const sidecarEnv: NodeJS.ProcessEnv = {
+      ...process.env,
+      ...this.options.env,
+      VISIONFORGE_API_PORT: String(port),
+      VISIONFORGE_PROJECT: this.options.projectPath,
+    };
     const pythonCommand =
-      this.options.pythonCommand ?? this.options.env?.VISIONFORGE_PYTHON ?? "python";
+      this.options.pythonCommand ?? sidecarEnv.VISIONFORGE_PYTHON ?? "python";
     let unavailableBeforeReady = false;
 
     this.child = spawnProcess(pythonCommand, ["-m", "visionforge_app.api"], {
-      env: {
-        ...process.env,
-        ...this.options.env,
-        VISIONFORGE_API_PORT: String(port),
-        VISIONFORGE_PROJECT: this.options.projectPath,
-      },
+      env: sidecarEnv,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });
