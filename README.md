@@ -24,6 +24,7 @@
 | 票-0004 契約 Schema 匯出＋TS codegen（L2） | ✅ 已合併（7ef91be，審查通過 Blocking 0） |
 | 票-0005/0006 批次 L0（app 服務＋ui 殼導航/匯入頁） | ✅ 已合併（728f03d／f360caf，票-0006 抽審通過） |
 | 試鏡與校準引擎（kernel，統計不外包，R2 9.2） | ✅ 已實作合併（ad3914c，PR #4，83 測試綠）；MediaRepository.iter_recent 就緒 |
+| Vision Provider 抽象（ADR-0008，能力聲明＋provisional 介面） | 🟨 契約＋介面＋providers/ 套件已落 core（待提交）；票-0008 fixture provider 發包中 |
 
 ## 給 AI Agent 的入場須知
 
