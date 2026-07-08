@@ -55,7 +55,7 @@
 | [票-0008-fixture-provider.md](06-規格票/票-0008-fixture-provider.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（11ca65f，PR #8）；第一個 provider（確定性 fixture）走通 provider→Claim→校準 |
 | [票-0009-FastAPI服務層.md](06-規格票/票-0009-FastAPI服務層.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（ca822ff，PR #9）；本機 FastAPI（/health /media /thumbnail /import /infer）；116 測試綠 |
 | [票-0010-Electron-sidecar.md](06-規格票/票-0010-Electron-sidecar.md) | 規格票 | — | ⬛ 已結案 | L2 審查通過（Blocking 0）合併（bb835bf，PR #10）；Electron 起 sidecar＋health＋CSP 放行 127.0.0.1；CSP 快照測試護欄 |
-| [票-0011-看懂站畫框UI.md](06-規格票/票-0011-看懂站畫框UI.md) | 規格票 | — | 🟨 已發出 | L0 免審：「看懂」站接後端、匯入→縮圖→偵測→**畫框**＋信賴度三色（TTFV 魔術時刻）；ui/src/renderer 白名單 |
+| [票-0011-看懂站畫框UI.md](06-規格票/票-0011-看懂站畫框UI.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（0e96871，PR #12，19 測試）；「看懂」站接後端、匯入→縮圖→偵測→**畫框**＋信賴度三色。**M0 第一個端到端達成** |
 | [GoodYolo_產品規劃書.md](03-規劃/GoodYolo_產品規劃書.md) | 規劃 | R1 | 🟧 部分失效 | 10 項設計被憲法附錄推翻；治理／審核／白話層章節仍為 R3 素材 |
 | [GoodYolo_架構評審_R2.md](04-評審/GoodYolo_架構評審_R2.md) | 評審 | R2 | 🟩 定案 | 結論已入憲；10.6 新骨架為 R3 與開發基準 |
 
