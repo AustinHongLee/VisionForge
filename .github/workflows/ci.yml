@@ -75,3 +75,19 @@ jobs:
         run: pnpm depcruise
       - name: TS 契約型別漂移檢查
         run: pnpm run check:contracts
+
+  pr-scope:
+    name: PR 範圍分類（§3-2 資訊性）
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 分類變更範圍
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          python scripts/check_pr_scope.py --base "origin/${{ github.base_ref }}"
