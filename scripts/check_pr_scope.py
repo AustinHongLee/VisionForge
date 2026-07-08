@@ -18,7 +18,14 @@ import sys
 from collections.abc import Sequence
 
 LAW_PATHS = ("docs/00-法規/", "docs/01-定義/")  # 修憲/修法：需人
-GUARD_PATHS = ("core/", "scripts/", ".github/")  # 守門路徑：L2 必審
+GUARD_PATHS = (
+    "core/",
+    "scripts/",
+    ".github/",
+    "ui/src/main/",  # Electron 主行程＝安全殼
+    "ui/src/preload/",  # 特權橋接面
+    "ui/src/renderer/index.html",  # CSP 所在
+)  # 守門路徑：L2 必審（含 UI 安全殼，票-0010 教訓）
 USERLAND_PATHS = ("app/", "ui/", "providers/")  # userland：L0 可自併
 
 LEVEL_L0 = "L0（可自併）"
