@@ -5,7 +5,12 @@ description = "VisionForge 服務層：匯入管線與本機服務（依賴方�
 requires-python = ">=3.12"
 dependencies = [
     "visionforge-core",
+    "visionforge-providers",
+    "fastapi>=0.116",
+    "httpx>=0.28",
     "pillow>=10.0",
+    "python-multipart>=0.0.20",
+    "uvicorn[standard]>=0.35",
 ]
 
 [build-system]
@@ -17,3 +22,4 @@ packages = ["src/visionforge_app"]
 
 [tool.uv.sources]
 visionforge-core = { workspace = true }
+visionforge-providers = { workspace = true }
