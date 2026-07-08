@@ -1,0 +1,48 @@
+import type { MediaRecord } from "../../../shared/contracts.generated";
+
+export const SAMPLE_MEDIA: MediaRecord[] = [
+  {
+    schema_version: "1.0",
+    media_hash: "49ab860f370463b727f21321f4149d9a1cced7ea27dd0b116bd73824aaa18495",
+    width_px: 1920,
+    height_px: 1080,
+    format: "jpeg",
+    byte_size: 582144,
+    imported_at: "2026-07-08T02:15:00Z",
+    source: { kind: "file", detail: "factory-line/a-camera.jpg" },
+    exif_normalized: true,
+  },
+  {
+    schema_version: "1.0",
+    media_hash: "308459369f46f29cb2c17ecf1a9ddec5db0252a2165978004ec72fe065fc6104",
+    width_px: 1280,
+    height_px: 960,
+    format: "png",
+    byte_size: 241008,
+    imported_at: "2026-07-08T02:17:00Z",
+    source: { kind: "folder", detail: "batch-001/panel-closeup.png" },
+    exif_normalized: true,
+  },
+  {
+    schema_version: "1.0",
+    media_hash: "7c6b3f531b61f90b1af2195c65d090ad35d2f2c7d8a9d771aca28131d3c495e2",
+    width_px: 2048,
+    height_px: 1536,
+    format: "webp",
+    byte_size: 416772,
+    imported_at: "2026-07-08T02:20:00Z",
+    source: { kind: "camera", detail: "inspection-rig/wide-angle" },
+    exif_normalized: true,
+  },
+  {
+    schema_version: "1.0",
+    media_hash: "92ec0f4a785b0e9d7f3b71c8f781d36fefb0ebeb2b0428be6d4f101dc5dc9e6c",
+    width_px: 1600,
+    height_px: 1200,
+    format: "bmp",
+    byte_size: 1886400,
+    imported_at: "2026-07-08T02:22:00Z",
+    source: { kind: "file", detail: "legacy-capture/valve-body.bmp" },
+    exif_normalized: true,
+  },
+];
