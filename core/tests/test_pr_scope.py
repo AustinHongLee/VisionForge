@@ -32,6 +32,15 @@ def test_law_paths_trigger_l2_plus_law():
     assert r["law"] == ["docs/01-定義/名詞定義表.md"]
 
 
+def test_ui_shell_paths_trigger_l2():
+    # 一般 renderer 元件仍是 L0
+    assert scope.is_l0(scope.classify(["ui/src/renderer/src/App.tsx"]))
+    # 但安全殼（main/preload/CSP）升 L2（票-0010 教訓）
+    assert scope.classify(["ui/src/main/index.ts"])["level"] == scope.LEVEL_L2
+    assert scope.classify(["ui/src/preload/index.ts"])["level"] == scope.LEVEL_L2
+    assert scope.classify(["ui/src/renderer/index.html"])["level"] == scope.LEVEL_L2
+
+
 def test_plain_docs_are_l0():
     r = scope.classify(["docs/README.md", "docs/06-規格票/票-0007.md"])
     assert scope.is_l0(r)
