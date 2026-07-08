@@ -45,7 +45,9 @@
 | [票-0001-UI殼與Bridge.md](06-規格票/票-0001-UI殼與Bridge.md) | 規格票 | — | ⬛ 已結案 | 審查通過（Blocking 0）；Non-blocking 5 項移票-0002 |
 | [票-0002-UI殼安全加固.md](06-規格票/票-0002-UI殼安全加固.md) | 規格票 | — | ⬛ 已結案 | L0 合併＋L1 抽查通過；openExternal 白名單、導航鎖、CSP、depcruise 擴充 |
 | [票-0003-匯入管線.md](06-規格票/票-0003-匯入管線.md) | 規格票 | — | ⬛ 已結案 | L0 免審合併（4ab83f7）；pytest 66 綠、ruff/D1·D13 守門通過、凍結介面守門測試綠 |
-| [票-0004-Schema匯出與TS-codegen.md](06-規格票/票-0004-Schema匯出與TS-codegen.md) | 規格票 | — | 🟦 草稿 | L2 必審：契約 JSON Schema 匯出＋TS 型別生成＋雙向漂移守門；待決策者發包 |
+| [票-0004-Schema匯出與TS-codegen.md](06-規格票/票-0004-Schema匯出與TS-codegen.md) | 規格票 | — | ⬛ 已結案 | L2 審查通過（Blocking 0）合併（7ef91be）；契約 JSON Schema 匯出＋TS codegen＋雙向漂移守門 |
+| [票-0005-app匯入與查詢服務.md](06-規格票/票-0005-app匯入與查詢服務.md) | 規格票 | — | 🟨 已發出 | L0 免審：import_directory 批次匯入（app/ 白名單，建於凍結儲存層）；media 查詢服務待 core 補列舉方法後另票 |
+| [票-0006-ui殼導航與匯入頁.md](06-規格票/票-0006-ui殼導航與匯入頁.md) | 規格票 | — | 🟨 已發出 | L0 免審：導航改「看懂/整理/鑄造/應用」（R2 10.6）＋匯入頁 drag-drop＋縮圖網格，用 contracts.generated 型別 |
 | [GoodYolo_產品規劃書.md](03-規劃/GoodYolo_產品規劃書.md) | 規劃 | R1 | 🟧 部分失效 | 10 項設計被憲法附錄推翻；治理／審核／白話層章節仍為 R3 素材 |
 | [GoodYolo_架構評審_R2.md](04-評審/GoodYolo_架構評審_R2.md) | 評審 | R2 | 🟩 定案 | 結論已入憲；10.6 新骨架為 R3 與開發基準 |
 

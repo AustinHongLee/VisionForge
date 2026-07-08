@@ -21,8 +21,9 @@
 | UI 殼＋安全加固（票-0001/0002，已合併） | ✅ 完成 |
 | 架構代理交接（Fable 5 → Opus 4.8，見交接手冊） | ✅ 完成 |
 | 票-0003 匯入管線（import_media，ADR-0006） | ✅ 已合併（4ab83f7，pytest 66 綠） |
-| 票-0004 契約 Schema 匯出＋TS codegen（L2） | 🟦 草稿待發包 |
-| 試鏡與校準引擎（kernel，統計不外包） | ⬜ 下一段 kernel 工作 |
+| 票-0004 契約 Schema 匯出＋TS codegen（L2） | ✅ 已合併（7ef91be，審查通過 Blocking 0） |
+| 票-0005/0006 批次 L0（app 服務＋ui 殼導航/匯入頁） | 🟨 發包中（並行雙軌） |
+| 試鏡與校準引擎（kernel，統計不外包，R2 9.2） | 🟨 進行中（Architect 親手，ADR-0007） |
 
 ## 給 AI Agent 的入場須知
 

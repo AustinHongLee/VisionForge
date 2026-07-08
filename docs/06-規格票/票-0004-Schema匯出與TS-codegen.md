@@ -2,7 +2,7 @@
 
 | 項目 | 內容 |
 |---|---|
-| 狀態 | 🟦 草稿（2026-07-08，待決策者發包給 Codex） |
+| 狀態 | ⬛ 已結案（2026-07-08 L2 審查通過 Blocking 0，合併 7ef91be；PR #1 MERGED） |
 | 承包 | Codex（Builder） |
 | 審查層級 | **L2 必審**（觸及 `scripts/`、`.github/`，建立契約→TS 消費路徑；Architect 合併前審查，協議 §3-2） |
 | 政策依據 | ADR-0002（技術棧：唯一事實來源＝core Pydantic 契約）、ADR-0003（Claim Schema 唯一事實來源＝`contracts/claims.py`） |
