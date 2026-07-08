@@ -52,7 +52,8 @@
 | [票-0005-app匯入與查詢服務.md](06-規格票/票-0005-app匯入與查詢服務.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（728f03d）；import_directory 批次匯入；media 查詢服務待 core 補列舉方法後另票 |
 | [票-0006-ui殼導航與匯入頁.md](06-規格票/票-0006-ui殼導航與匯入頁.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（f360caf）；L1 抽審通過（0 問題）；導航「看懂/整理/鑄造/應用」＋匯入頁；型別取自 contracts.generated |
 | [票-0007-app-media查詢服務.md](06-規格票/票-0007-app-media查詢服務.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（4cc57d3）；list_media 分頁＋get_media＋thumbnail_path |
-| [票-0008-fixture-provider.md](06-規格票/票-0008-fixture-provider.md) | 規格票 | — | 🟨 已發出 | L0 免審：第一個 provider（確定性 fixture），走通 provider→Claim→校準；providers/ 白名單（套件已由 Architect 建好） |
+| [票-0008-fixture-provider.md](06-規格票/票-0008-fixture-provider.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（11ca65f，PR #8）；第一個 provider（確定性 fixture）走通 provider→Claim→校準 |
+| [票-0009-FastAPI服務層.md](06-規格票/票-0009-FastAPI服務層.md) | 規格票 | — | 🟨 已發出 | L0 免審：本機 FastAPI（/health /media /thumbnail /import /infer）；UI↔Python 橋的 Python 側（ADR-0009） |
 | [GoodYolo_產品規劃書.md](03-規劃/GoodYolo_產品規劃書.md) | 規劃 | R1 | 🟧 部分失效 | 10 項設計被憲法附錄推翻；治理／審核／白話層章節仍為 R3 素材 |
 | [GoodYolo_架構評審_R2.md](04-評審/GoodYolo_架構評審_R2.md) | 評審 | R2 | 🟩 定案 | 結論已入憲；10.6 新骨架為 R3 與開發基準 |
 
