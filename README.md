@@ -19,8 +19,10 @@
 | 契約層：Claim Schema（ADR-0003）＋帳本 Schema（ADR-0004） | ✅ 完成 |
 | 儲存層（ADR-0005，core 49 測試綠、ruff 乾淨） | ✅ 完成 |
 | UI 殼＋安全加固（票-0001/0002，已合併） | ✅ 完成 |
-| 架構代理交接（Fable 5 → Opus 4.8，見交接手冊） | 🟨 就緒 |
-| 票-0003 匯入管線 → Codex | ⬜ 新任 Architect 的第一件事 |
+| 架構代理交接（Fable 5 → Opus 4.8，見交接手冊） | ✅ 完成 |
+| 票-0003 匯入管線（import_media，ADR-0006） | ✅ 已合併（4ab83f7，pytest 66 綠） |
+| 票-0004 契約 Schema 匯出＋TS codegen（L2） | 🟦 草稿待發包 |
+| 試鏡與校準引擎（kernel，統計不外包） | ⬜ 下一段 kernel 工作 |
 
 ## 給 AI Agent 的入場須知
 
