@@ -1,5 +1,12 @@
 """契約模組：核心與一切 Provider 的唯一耦合點（憲法 PR2）＋治理帳本（B1）。"""
 
+from visionforge_core.contracts.calibration import (
+    CALIBRATION_METHOD,
+    CalibrationMapping,
+    CalibrationSnapshot,
+    ClassCalibration,
+    MappingPoint,
+)
 from visionforge_core.contracts.claims import (
     SCHEMA_VERSION,
     Assertion,
@@ -46,7 +53,12 @@ __all__ = [
     "SCHEMA_VERSION",
     "Assertion",
     "BBox",
+    "CALIBRATION_METHOD",
+    "CalibrationMapping",
+    "CalibrationSnapshot",
     "CandidateProvider",
+    "ClassCalibration",
+    "MappingPoint",
     "Claim",
     "Concept",
     "ConceptMappingProvenance",

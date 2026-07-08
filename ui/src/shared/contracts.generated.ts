@@ -5,6 +5,26 @@ export type X1 = number;
 export type X2 = number;
 export type Y1 = number;
 export type Y2 = number;
+/**
+ * @minItems 1
+ */
+export type Points = [MappingPoint, ...MappingPoint[]];
+export type Calibrated = number;
+export type Raw = number;
+export type CalibrationId = string;
+export type ConceptKey = string;
+export type NSamples = number;
+export type Reliability = "none" | "low" | "high";
+export type ShrinkageWeight = number;
+export type Threshold = number;
+export type Classes = ClassCalibration[];
+export type CreatedAt = string;
+export type GlobalThreshold = number;
+export type GoldenManifestRef = string;
+export type Method = "shrinkage_eb_v1";
+export type PrecisionTarget = number;
+export type PriorStrength = number;
+export type SchemaVersion = "1.0";
 export type AuditionScore = number | null;
 export type CapabilityOk = boolean;
 export type EstimatedCostRef = string | null;
@@ -18,15 +38,15 @@ export type Kind = "human" | "rule" | "model";
 export type MappedAt = string;
 export type RawText = string;
 export type TaxonomyNodeId = string | null;
-export type Calibrated = number | null;
+export type Calibrated1 = number | null;
 export type CalibrationRef = string | null;
-export type Raw = number;
-export type Reliability = "none" | "low" | "high";
+export type Raw1 = number;
+export type Reliability1 = "none" | "low" | "high";
 export type Geometry = BBox | Polygon | MaskRef | Keypoints | WholeImage | UnknownGeometry;
 /**
  * @minItems 3
  */
-export type Points = [Point, Point, Point, ...Point[]];
+export type Points1 = [Point, Point, Point, ...Point[]];
 export type X = number;
 export type Y = number;
 export type Type1 = "polygon";
@@ -36,7 +56,7 @@ export type Type2 = "mask_ref";
 /**
  * @minItems 1
  */
-export type Points1 = [KeypointPoint, ...KeypointPoint[]];
+export type Points2 = [KeypointPoint, ...KeypointPoint[]];
 export type Visible = boolean;
 export type X3 = number;
 export type Y3 = number;
@@ -64,7 +84,7 @@ export type Measurements = [CostMeasurement, ...CostMeasurement[]];
 export type Amount = number | string;
 export type Unit = string;
 export type Phase = "estimate" | "actual";
-export type SchemaVersion = "1.0";
+export type SchemaVersion1 = "1.0";
 export type Id1 = string;
 export type Kind2 =
   | "media"
@@ -82,7 +102,7 @@ export type Kind2 =
   | "training_run"
   | "export_job"
   | "data_job";
-export type CreatedAt = string;
+export type CreatedAt1 = string;
 export type LabelRefs = string[];
 export type MediaHash = string;
 export type Split = "train" | "val";
@@ -93,7 +113,7 @@ export type ParentRef = string | null;
 export type Human = number;
 export type Imported = number;
 export type MachineAssisted = number;
-export type SchemaVersion1 = "1.0";
+export type SchemaVersion2 = "1.0";
 export type VersionId = string;
 export type VersionNumber = number;
 export type ReasonCode = string;
@@ -103,7 +123,7 @@ export type DecisionRef = string;
 export type Detail = string;
 export type OutcomeId = string;
 export type ProducedRefs = InputRef[];
-export type SchemaVersion2 = "1.0";
+export type SchemaVersion3 = "1.0";
 export type Status = "success" | "failure" | "cancelled" | "partial";
 export type Actor1 = string;
 export type At2 = string;
@@ -119,18 +139,18 @@ export type Kind3 =
 export type OverridesRef = string | null;
 export type PolicyHash = string;
 export type PolicyLabel = string;
-export type SchemaVersion3 = "1.0";
+export type SchemaVersion4 = "1.0";
 export type AddedAt = string;
 export type AddedBy = string;
 export type EntryId = string;
 export type LabelRef = string;
 export type MediaHash1 = string;
 export type RetiredReason = string | null;
-export type SchemaVersion4 = "1.0";
+export type SchemaVersion5 = "1.0";
 export type Status1 = "active" | "retired";
 export type Claims = Claim[];
 export type CostRef = string;
-export type CreatedAt1 = string;
+export type CreatedAt2 = string;
 export type DecisionRef1 = string;
 export type DurationMs = number;
 export type ParamsHash = string;
@@ -138,7 +158,7 @@ export type PromptRef = string | null;
 export type ProviderId1 = string;
 export type ProviderVersion1 = string;
 export type RunId = string;
-export type SchemaVersion5 = "1.0";
+export type SchemaVersion6 = "1.0";
 export type HeightPx = number;
 export type MediaHash2 = string;
 export type WidthPx = number;
@@ -151,7 +171,7 @@ export type MediaHash3 = string;
 export type ReviewedAt1 = string;
 export type Reviewer1 = string;
 export type RunRef = string;
-export type SchemaVersion6 = "1.0";
+export type SchemaVersion7 = "1.0";
 export type SourceStatus = "approved" | "edited_approved";
 export type ByteSize = number;
 export type ExifNormalized = boolean;
@@ -159,7 +179,7 @@ export type Format1 = "jpeg" | "png" | "webp" | "bmp" | "tiff";
 export type HeightPx1 = number;
 export type ImportedAt = string;
 export type MediaHash4 = string;
-export type SchemaVersion7 = "1.0";
+export type SchemaVersion8 = "1.0";
 export type Detail1 = string;
 export type Kind4 = "file" | "folder" | "clipboard" | "video_frame" | "pdf_page" | "camera" | "screen" | "url";
 export type WidthPx1 = number;
@@ -172,7 +192,7 @@ export type EventId = string;
 export type ReviewStatus1 =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
 export type LabelRef1 = string | null;
-export type SchemaVersion8 = "1.0";
+export type SchemaVersion9 = "1.0";
 export type ReviewStatus2 =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
 
@@ -189,6 +209,56 @@ export interface BBox {
   x2: X2;
   y1: Y1;
   y2: Y2;
+}
+/**
+ * raw→calibrated 的單調階梯映射；points 依 raw 遞增、calibrated 非遞減。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "CalibrationMapping".
+ */
+export interface CalibrationMapping {
+  points: Points;
+}
+/**
+ * 等滲回歸斷點：raw 門檻 → 校準後信心（P(correct|raw) 的單調估計）。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "MappingPoint".
+ */
+export interface MappingPoint {
+  calibrated: Calibrated;
+  raw: Raw;
+}
+/**
+ * 一次校準的不可變快照；calibration_ref 指向它＝信賴度的可驗證背書。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "CalibrationSnapshot".
+ */
+export interface CalibrationSnapshot {
+  calibration_id: CalibrationId;
+  classes?: Classes;
+  created_at: CreatedAt;
+  global_threshold: GlobalThreshold;
+  golden_manifest_ref: GoldenManifestRef;
+  method?: Method;
+  precision_target: PrecisionTarget;
+  prior_strength: PriorStrength;
+  schema_version?: SchemaVersion;
+}
+/**
+ * 逐類校準結果。none 級不輸出映射、退回保守全域門檻（R2 9.2）。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "ClassCalibration".
+ */
+export interface ClassCalibration {
+  concept_key: ConceptKey;
+  mapping?: CalibrationMapping | null;
+  n_samples: NSamples;
+  reliability: Reliability;
+  shrinkage_weight: ShrinkageWeight;
+  threshold: Threshold;
 }
 /**
  * 候選 Provider 的證據列（A6：沒有證據的選擇等於沒發生）。
@@ -246,17 +316,17 @@ export interface ConceptMappingProvenance {
  * via the `definition` "Confidence".
  */
 export interface Confidence {
-  calibrated?: Calibrated;
+  calibrated?: Calibrated1;
   calibration_ref?: CalibrationRef;
-  raw: Raw;
-  reliability?: Reliability;
+  raw: Raw1;
+  reliability?: Reliability1;
 }
 /**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
  * via the `definition` "Polygon".
  */
 export interface Polygon {
-  points: Points;
+  points: Points1;
   type?: Type1;
 }
 /**
@@ -285,7 +355,7 @@ export interface MaskRef {
  * via the `definition` "Keypoints".
  */
 export interface Keypoints {
-  points: Points1;
+  points: Points2;
   skeleton_ref: SkeletonRef;
   type?: Type3;
 }
@@ -345,7 +415,7 @@ export interface CostEntry {
   estimate_ref?: EstimateRef;
   measurements: Measurements;
   phase: Phase;
-  schema_version?: SchemaVersion;
+  schema_version?: SchemaVersion1;
   subject: InputRef;
 }
 /**
@@ -378,13 +448,13 @@ export interface InputRef {
  * via the `definition` "DatasetVersionManifest".
  */
 export interface DatasetVersionManifest {
-  created_at: CreatedAt;
+  created_at: CreatedAt1;
   entries: Entries;
   gate_decision_ref?: GateDecisionRef;
   note?: Note;
   parent_ref?: ParentRef;
   provenance: ProvenanceSummary;
-  schema_version?: SchemaVersion1;
+  schema_version?: SchemaVersion2;
   version_id: VersionId;
   version_number: VersionNumber;
 }
@@ -428,7 +498,7 @@ export interface DecisionOutcome {
   detail?: Detail;
   outcome_id: OutcomeId;
   produced_refs?: ProducedRefs;
-  schema_version?: SchemaVersion2;
+  schema_version?: SchemaVersion3;
   status: Status;
 }
 /**
@@ -450,7 +520,7 @@ export interface DecisionRecord {
   kind: Kind3;
   overrides_ref?: OverridesRef;
   policy: PolicyRef;
-  schema_version?: SchemaVersion3;
+  schema_version?: SchemaVersion4;
 }
 /**
  * 生效政策的快照參照——重放時必須能指認當時的政策（D3）。
@@ -475,7 +545,7 @@ export interface GoldenSetEntry {
   label_ref: LabelRef;
   media_hash: MediaHash1;
   retired_reason?: RetiredReason;
-  schema_version?: SchemaVersion4;
+  schema_version?: SchemaVersion5;
   status?: Status1;
 }
 /**
@@ -487,12 +557,12 @@ export interface GoldenSetEntry {
 export interface InferenceRun {
   claims?: Claims;
   cost_ref: CostRef;
-  created_at: CreatedAt1;
+  created_at: CreatedAt2;
   decision_ref: DecisionRef1;
   duration_ms: DurationMs;
   producer: Producer;
   run_id: RunId;
-  schema_version?: SchemaVersion5;
+  schema_version?: SchemaVersion6;
   subject: MediaSubject;
   task: Task;
 }
@@ -538,7 +608,7 @@ export interface Label {
   reviewed_at: ReviewedAt1;
   reviewer: Reviewer1;
   run_ref: RunRef;
-  schema_version?: SchemaVersion6;
+  schema_version?: SchemaVersion7;
   source_status: SourceStatus;
 }
 /**
@@ -552,7 +622,7 @@ export interface MediaRecord {
   height_px: HeightPx1;
   imported_at: ImportedAt;
   media_hash: MediaHash4;
-  schema_version?: SchemaVersion7;
+  schema_version?: SchemaVersion8;
   source: MediaSource;
   width_px: WidthPx1;
 }
@@ -593,6 +663,6 @@ export interface ReviewEvent {
   event_id: EventId;
   from_status: ReviewStatus1;
   label_ref?: LabelRef1;
-  schema_version?: SchemaVersion8;
+  schema_version?: SchemaVersion9;
   to_status: ReviewStatus2;
 }

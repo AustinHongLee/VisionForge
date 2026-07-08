@@ -61,6 +61,14 @@ class MediaRepository:
         row = self._db.query_one("SELECT COUNT(*) AS n FROM media")
         return int(row["n"]) if row else 0
 
+    def iter_recent(self, *, limit: int = 100, offset: int = 0) -> list[MediaRecord]:
+        """最近匯入優先列舉（確定性排序：imported_at DESC，media_hash DESC 為次序）。"""
+        rows = self._db.query_all(
+            "SELECT json FROM media ORDER BY imported_at DESC, media_hash DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
+        return [MediaRecord.model_validate_json(row["json"]) for row in rows]
+
 
 class RunRepository:
     """Run 與其 Claims 一體寫入（整批成功或整批不存在）。"""
