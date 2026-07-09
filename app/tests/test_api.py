@@ -187,6 +187,141 @@ def test_process_unknown_media_returns_404(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def _process_image(client: TestClient, concepts: list[str] | None = None) -> dict:
+    imported = _import_image(client)
+    response = client.post(
+        "/process",
+        json={
+            "media_hash": imported["media_hash"],
+            "concepts": [{"raw_text": text} for text in (concepts or ["bolt"])],
+        },
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def test_review_pending_lists_processed_claims(client: TestClient) -> None:
+    _process_image(client)
+
+    response = client.get("/review/pending")
+
+    assert response.status_code == 200
+    pending = response.json()
+    assert len(pending) == 1
+    assert pending[0]["claim"]["concept"]["raw_text"] == "bolt"
+    assert pending[0]["run_ref"]
+    assert pending[0]["media_hash"]
+
+
+def test_review_approve_returns_label_and_removes_pending_claim(
+    client: TestClient,
+) -> None:
+    _process_image(client)
+    pending = client.get("/review/pending").json()[0]
+
+    response = client.post(
+        "/review/approve",
+        json={
+            "claim_id": pending["claim"]["claim_id"],
+            "run_ref": pending["run_ref"],
+            "media_hash": pending["media_hash"],
+            "reviewer": "alice",
+        },
+    )
+
+    assert response.status_code == 200
+    label = response.json()
+    assert label["claim_ref"] == pending["claim"]["claim_id"]
+    assert label["source_status"] == "approved"
+    assert label["final_concept"]["taxonomy_node_id"]
+    assert label["final_concept"]["mapping_provenance"]["kind"] == "human"
+    assert client.get("/review/pending").json() == []
+
+
+def test_review_approve_with_geometry_edit_marks_edited(client: TestClient) -> None:
+    _process_image(client)
+    pending = client.get("/review/pending").json()[0]
+
+    response = client.post(
+        "/review/approve",
+        json={
+            "claim_id": pending["claim"]["claim_id"],
+            "run_ref": pending["run_ref"],
+            "media_hash": pending["media_hash"],
+            "reviewer": "alice",
+            "final_geometry": {"type": "bbox", "x1": 0.2, "y1": 0.2, "x2": 0.9, "y2": 0.9},
+        },
+    )
+
+    assert response.status_code == 200
+    label = response.json()
+    assert label["source_status"] == "edited_approved"
+    assert label["final_geometry"]["x2"] == 0.9
+
+
+def test_review_reject_removes_pending_without_label(client: TestClient, project) -> None:
+    _process_image(client)
+    pending = client.get("/review/pending").json()[0]
+
+    response = client.post(
+        "/review/reject",
+        json={
+            "claim_id": pending["claim"]["claim_id"],
+            "run_ref": pending["run_ref"],
+            "media_hash": pending["media_hash"],
+            "reviewer": "alice",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["to_status"] == "rejected"
+    assert body["event_id"]
+    assert client.get("/review/pending").json() == []
+    assert project.labels.iter_by_media(pending["media_hash"]) == []
+
+
+def test_golden_endpoint_registers_approved_label(client: TestClient) -> None:
+    _process_image(client)
+    pending = client.get("/review/pending").json()[0]
+    approved = client.post(
+        "/review/approve",
+        json={
+            "claim_id": pending["claim"]["claim_id"],
+            "run_ref": pending["run_ref"],
+            "media_hash": pending["media_hash"],
+            "reviewer": "alice",
+        },
+    ).json()
+
+    response = client.post("/golden", json={"label_id": approved["label_id"], "added_by": "alice"})
+
+    assert response.status_code == 200
+    entry = response.json()
+    assert entry["status"] == "active"
+    assert entry["label_ref"] == approved["label_id"]
+    assert entry["media_hash"] == approved["media_hash"]
+
+
+def test_review_and_golden_unknown_ids_return_404(client: TestClient) -> None:
+    missing_claim = client.post(
+        "/review/approve",
+        json={
+            "claim_id": "0000000000000000000000000A",
+            "run_ref": "0000000000000000000000000B",
+            "media_hash": "f" * 64,
+            "reviewer": "alice",
+        },
+    )
+    missing_label = client.post(
+        "/golden",
+        json={"label_id": "0000000000000000000000000C", "added_by": "alice"},
+    )
+
+    assert missing_claim.status_code == 404
+    assert missing_label.status_code == 404
+
+
 def test_import_bad_bytes_returns_422(client: TestClient) -> None:
     response = client.post(
         "/import",
