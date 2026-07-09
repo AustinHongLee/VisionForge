@@ -30,6 +30,7 @@ from visionforge_core.storage import Project, open_project
 from visionforge_core.storage.errors import NotFoundError
 from visionforge_providers import FixtureProvider
 
+from visionforge_app.export import ExportOutcome, export_dataset
 from visionforge_app.importer import import_media
 from visionforge_app.importer.errors import MediaImportError
 from visionforge_app.processing import UnknownMediaError, process_media
@@ -99,6 +100,19 @@ class RejectResponse(BaseModel):
 class GoldenRequest(BaseModel):
     label_id: str
     added_by: str = Field(min_length=1, max_length=256)
+
+
+class ExportRequest(BaseModel):
+    fmt: Literal["yolo", "coco"]
+
+
+class ExportResponse(BaseModel):
+    version_id: str
+    fmt: Literal["yolo", "coco"]
+    out_dir: str
+    image_count: int
+    label_count: int
+    class_names: tuple[str, ...]
 
 
 _LOCAL_RENDERER_ORIGIN_RE = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
@@ -286,4 +300,29 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
             return Response(status_code=204)
         return snapshot
 
+    @app.post("/export", response_model=ExportResponse)
+    def export_endpoint(request: ExportRequest) -> ExportResponse:
+        try:
+            with request_project() as current:
+                outcome = export_dataset(
+                    current,
+                    request.fmt,
+                    version_id=_new_ulid(),
+                    created_at=_utc_now(),
+                )
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail={"error": str(exc)}) from exc
+        return _export_response(outcome)
+
     return app
+
+
+def _export_response(outcome: ExportOutcome) -> ExportResponse:
+    return ExportResponse(
+        version_id=outcome.version_id,
+        fmt=outcome.fmt,
+        out_dir=str(outcome.out_dir),
+        image_count=outcome.image_count,
+        label_count=outcome.label_count,
+        class_names=outcome.class_names,
+    )
