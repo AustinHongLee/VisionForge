@@ -11,6 +11,7 @@ import json
 import sqlite3
 
 from visionforge_core.contracts import (
+    CalibrationSnapshot,
     Claim,
     CostEntry,
     DatasetVersionManifest,
@@ -136,6 +137,19 @@ class RunRepository:
         return [
             (Claim.model_validate_json(r["json"]), r["run_id"], r["media_hash"]) for r in rows
         ]
+
+    def iter_reviewed(self) -> list[tuple[Claim, str]]:
+        """已審 claim＋其終局 to_status（校準觀測來源：approve/edit=correct、reject=incorrect）。"""
+        rows = self._db.query_all(
+            "SELECT c.json AS cj, e.json AS ej FROM claims c "
+            "JOIN review_events e ON c.claim_id = e.claim_ref ORDER BY c.claim_id"
+        )
+        out: list[tuple[Claim, str]] = []
+        for row in rows:
+            claim = Claim.model_validate_json(row["cj"])
+            event = ReviewEvent.model_validate_json(row["ej"])
+            out.append((claim, event.to_status.value))
+        return out
 
 
 class LabelRepository:
@@ -366,3 +380,24 @@ class TaxonomyRepository:
     def list(self) -> list[TaxonomyNode]:
         rows = self._db.query_all("SELECT json FROM taxonomy ORDER BY created_at, node_id")
         return [TaxonomyNode.model_validate_json(r["json"]) for r in rows]
+
+
+class CalibrationRepository:
+    """校準快照登記（ADR-0007/0010）：append-only；get_latest 取最新。"""
+
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def append(self, snapshot: CalibrationSnapshot) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO calibrations(calibration_id, created_at, json) VALUES(?, ?, ?)",
+            (snapshot.calibration_id, snapshot.created_at.isoformat(), snapshot.model_dump_json()),
+            f"calibration {snapshot.calibration_id}",
+        )
+
+    def get_latest(self) -> CalibrationSnapshot | None:
+        row = self._db.query_one(
+            "SELECT json FROM calibrations ORDER BY created_at DESC, calibration_id DESC LIMIT 1"
+        )
+        return CalibrationSnapshot.model_validate_json(row["json"]) if row else None

@@ -5,5 +5,17 @@ from visionforge_core.calibration.engine import (
     apply_calibration,
     calibrate,
 )
+from visionforge_core.calibration.flow import (
+    apply_latest,
+    observations_from_reviews,
+    recalibrate,
+)
 
-__all__ = ["CalibrationObservation", "apply_calibration", "calibrate"]
+__all__ = [
+    "CalibrationObservation",
+    "apply_calibration",
+    "apply_latest",
+    "calibrate",
+    "observations_from_reviews",
+    "recalibrate",
+]
