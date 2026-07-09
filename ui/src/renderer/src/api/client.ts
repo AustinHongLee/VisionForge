@@ -1,4 +1,10 @@
-import type { Claim, Concept, MediaRecord } from "../../../shared/contracts.generated";
+import type {
+  CalibrationSnapshot,
+  Claim,
+  Concept,
+  Label,
+  MediaRecord,
+} from "../../../shared/contracts.generated";
 
 export interface MediaPage {
   items: MediaRecord[];
@@ -17,6 +23,24 @@ export interface ImportResult {
 export interface InferResult {
   claims: Claim[];
   provider_id: string;
+}
+
+export interface PendingItem {
+  claim: Claim;
+  run_ref: string;
+  media_hash: string;
+}
+
+export interface ReviewDecisionInput {
+  claim_id: string;
+  run_ref: string;
+  media_hash: string;
+  reviewer: string;
+}
+
+export interface RejectResult {
+  event_id: string;
+  to_status: string;
 }
 
 export class ApiError extends Error {
@@ -80,4 +104,39 @@ export const infer = async (mediaHash: string, concepts: string[]): Promise<Infe
     method: "POST",
   });
   return parseResponse<InferResult>(response);
+};
+
+export const reviewPending = async (): Promise<PendingItem[]> => {
+  const baseUrl = await getBaseUrl();
+  const response = await fetch(`${baseUrl}/review/pending`);
+  return parseResponse<PendingItem[]>(response);
+};
+
+export const approveClaim = async (body: ReviewDecisionInput): Promise<Label> => {
+  const baseUrl = await getBaseUrl();
+  const response = await fetch(`${baseUrl}/review/approve`, {
+    body: JSON.stringify(body),
+    headers: { "content-type": "application/json" },
+    method: "POST",
+  });
+  return parseResponse<Label>(response);
+};
+
+export const rejectClaim = async (body: ReviewDecisionInput): Promise<RejectResult> => {
+  const baseUrl = await getBaseUrl();
+  const response = await fetch(`${baseUrl}/review/reject`, {
+    body: JSON.stringify(body),
+    headers: { "content-type": "application/json" },
+    method: "POST",
+  });
+  return parseResponse<RejectResult>(response);
+};
+
+export const recalibrate = async (): Promise<CalibrationSnapshot | null> => {
+  const baseUrl = await getBaseUrl();
+  const response = await fetch(`${baseUrl}/recalibrate`, { method: "POST" });
+  if (response.status === 204) {
+    return null;
+  }
+  return parseResponse<CalibrationSnapshot>(response);
 };

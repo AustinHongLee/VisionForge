@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Claim, MediaRecord } from "../../shared/contracts.generated";
 import { importFile, infer, listMedia, thumbnailUrl } from "./api/client";
+import CurateView from "./components/CurateView";
 import DetailView from "./components/DetailView";
 import DropZone from "./components/DropZone";
 import ThumbnailGrid from "./components/ThumbnailGrid";
@@ -174,6 +175,8 @@ const App = (): React.JSX.Element => {
               }}
             />
           </div>
+        ) : activeStation === "curate" ? (
+          <CurateView />
         ) : (
           <div className="empty-panel">
             <p className="eyebrow">{active.english}</p>
