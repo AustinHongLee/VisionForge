@@ -38,6 +38,12 @@ const claim = (rawText: string, claimId: string, raw: number): Claim => ({
   geometry: { type: "bbox", x1: 0.1, x2: 0.5, y1: 0.2, y2: 0.6 },
 });
 
+const pendingItem = (rawText: string, claimId: string, raw: number, media = mediaA) => ({
+  claim: claim(rawText, claimId, raw),
+  media_hash: media.media_hash,
+  run_ref: "0000000000000000000000000A",
+});
+
 const page = (items: MediaRecord[]) => ({
   has_more: false,
   items,
@@ -192,5 +198,125 @@ describe("App", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("sidecar unavailable");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("renders grouped review cards with thumbnail overlays", async () => {
+    const pending = [
+      pendingItem("bolt", "00000000000000000000000001", 0.73),
+      pendingItem("bolt", "00000000000000000000000002", 0.61),
+      pendingItem("crack", "00000000000000000000000003", 0.44, mediaB),
+    ];
+    fetchMock.mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/review/pending")) {
+        return jsonResponse(pending);
+      }
+      return jsonResponse(page([]));
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /整理/ }));
+
+    expect(await screen.findByRole("region", { name: "概念 bolt" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "概念 crack" })).toBeInTheDocument();
+    expect(screen.getByText("73%")).toBeInTheDocument();
+    expect(screen.getByText("44%")).toBeInTheDocument();
+    expect(screen.getAllByTestId("claim-box")).toHaveLength(3);
+    expect(screen.getAllByLabelText("偵測框 bolt")[0]).toHaveStyle({
+      height: "40%",
+      left: "10%",
+      top: "20%",
+      width: "40%",
+    });
+    expect(screen.getAllByAltText("bolt 待審縮圖")[0]).toHaveAttribute(
+      "src",
+      `${API_BASE}/media/${mediaA.media_hash}/thumbnail`,
+    );
+  });
+
+  it("approves a pending claim and reloads the review queue", async () => {
+    let pending = [pendingItem("bolt", "00000000000000000000000001", 0.73)];
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith("/review/pending")) {
+        return jsonResponse(pending);
+      }
+      if (url.endsWith("/review/approve")) {
+        pending = [];
+        expect(init?.method).toBe("POST");
+        expect(JSON.parse(String(init?.body))).toEqual({
+          claim_id: "00000000000000000000000001",
+          media_hash: mediaA.media_hash,
+          reviewer: "local-user",
+          run_ref: "0000000000000000000000000A",
+        });
+        return jsonResponse({ label_id: "0000000000000000000000000B" });
+      }
+      return jsonResponse(page([]));
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /整理/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "批准" }));
+
+    expect(await screen.findByRole("heading", { name: "尚無待審 Claim" })).toBeInTheDocument();
+  });
+
+  it("rejects a pending claim and reloads the review queue", async () => {
+    let pending = [pendingItem("crack", "00000000000000000000000003", 0.44)];
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith("/review/pending")) {
+        return jsonResponse(pending);
+      }
+      if (url.endsWith("/review/reject")) {
+        pending = [];
+        expect(init?.method).toBe("POST");
+        expect(JSON.parse(String(init?.body))).toEqual({
+          claim_id: "00000000000000000000000003",
+          media_hash: mediaA.media_hash,
+          reviewer: "local-user",
+          run_ref: "0000000000000000000000000A",
+        });
+        return jsonResponse({ event_id: "0000000000000000000000000C", to_status: "rejected" });
+      }
+      return jsonResponse(page([]));
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /整理/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "否決" }));
+
+    expect(await screen.findByRole("heading", { name: "尚無待審 Claim" })).toBeInTheDocument();
+  });
+
+  it("shows an empty recalibration result for 204 responses", async () => {
+    fetchMock.mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith("/review/pending")) {
+        return jsonResponse([]);
+      }
+      if (url.endsWith("/recalibrate")) {
+        expect(init?.method).toBe("POST");
+        return new Response(null, { status: 204 });
+      }
+      return jsonResponse(page([]));
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /整理/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "重新校準" }));
+
+    expect(await screen.findByText("尚無已審結果")).toBeInTheDocument();
+  });
+
+  it("shows a curate error state when the API base URL is not ready", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(page([])));
+    vi.mocked(bridge.getApiBaseUrl).mockRejectedValue(new Error("sidecar unavailable"));
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /整理/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("sidecar unavailable");
   });
 });
