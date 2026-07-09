@@ -2,17 +2,30 @@
 
 from __future__ import annotations
 
+import secrets
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from starlette.middleware.cors import CORSMiddleware
-from visionforge_core.contracts import Claim, Concept, MediaRecord, MediaSource
+from visionforge_core.contracts import (
+    Claim,
+    Concept,
+    GoldenSetEntry,
+    Label,
+    MediaRecord,
+    MediaSource,
+)
+from visionforge_core.contracts.claims import Geometry
 from visionforge_core.providers import InferenceRequest, VisionProvider
+from visionforge_core.review import ClaimForReview, approve, list_pending, reject
 from visionforge_core.storage import Project, open_project
+from visionforge_core.storage.errors import NotFoundError
 from visionforge_providers import FixtureProvider
 
 from visionforge_app.importer import import_media
@@ -53,7 +66,62 @@ class ProcessResponse(BaseModel):
     cost_ref: str
 
 
+class PendingReviewItem(BaseModel):
+    claim: Claim
+    run_ref: str
+    media_hash: str
+
+
+class ApproveRequest(BaseModel):
+    claim_id: str
+    run_ref: str
+    media_hash: str
+    reviewer: str = Field(min_length=1, max_length=256)
+    final_geometry: Geometry | None = None
+    final_concept_raw_text: str | None = Field(default=None, min_length=1, max_length=512)
+
+
+class RejectRequest(BaseModel):
+    claim_id: str
+    run_ref: str
+    media_hash: str
+    reviewer: str = Field(min_length=1, max_length=256)
+
+
+class RejectResponse(BaseModel):
+    event_id: str
+    to_status: str
+
+
+class GoldenRequest(BaseModel):
+    label_id: str
+    added_by: str = Field(min_length=1, max_length=256)
+
+
 _LOCAL_RENDERER_ORIGIN_RE = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+_CROCKFORD32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+
+
+def _new_ulid() -> str:
+    timestamp_ms = int(time.time() * 1000) & ((1 << 48) - 1)
+    value = (timestamp_ms << 80) | secrets.randbits(80)
+    chars: list[str] = []
+    for _ in range(26):
+        chars.append(_CROCKFORD32[value & 0b11111])
+        value >>= 5
+    return "".join(reversed(chars))
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _claim_item(project: Project, claim_id: str, run_ref: str, media_hash: str) -> ClaimForReview:
+    try:
+        claim = project.runs.get_claim(claim_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=404, detail={"error": "claim_not_found"}) from exc
+    return ClaimForReview(claim=claim, run_ref=run_ref, media_hash=media_hash)
 
 
 def create_app(project: Project, provider: VisionProvider | None = None) -> FastAPI:
@@ -142,5 +210,63 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
             decision_ref=run.decision_ref,
             cost_ref=run.cost_ref,
         )
+
+    @app.get("/review/pending", response_model=list[PendingReviewItem])
+    def review_pending() -> list[PendingReviewItem]:
+        with request_project() as current:
+            return [
+                PendingReviewItem(
+                    claim=item.claim,
+                    run_ref=item.run_ref,
+                    media_hash=item.media_hash,
+                )
+                for item in list_pending(current)
+            ]
+
+    @app.post("/review/approve", response_model=Label)
+    def review_approve(request: ApproveRequest) -> Label:
+        with request_project() as current:
+            item = _claim_item(current, request.claim_id, request.run_ref, request.media_hash)
+            return approve(
+                current,
+                item,
+                reviewer=request.reviewer,
+                reviewed_at=_utc_now(),
+                node_id=_new_ulid(),
+                label_id=_new_ulid(),
+                event_id=_new_ulid(),
+                final_geometry=request.final_geometry,
+                final_concept_raw_text=request.final_concept_raw_text,
+            )
+
+    @app.post("/review/reject", response_model=RejectResponse)
+    def review_reject(request: RejectRequest) -> RejectResponse:
+        with request_project() as current:
+            item = _claim_item(current, request.claim_id, request.run_ref, request.media_hash)
+            event = reject(
+                current,
+                item,
+                reviewer=request.reviewer,
+                reviewed_at=_utc_now(),
+                event_id=_new_ulid(),
+            )
+            return RejectResponse(event_id=event.event_id, to_status=event.to_status.value)
+
+    @app.post("/golden", response_model=GoldenSetEntry)
+    def golden(request: GoldenRequest) -> GoldenSetEntry:
+        try:
+            with request_project() as current:
+                label = current.labels.get(request.label_id)
+                entry = GoldenSetEntry(
+                    entry_id=_new_ulid(),
+                    media_hash=label.media_hash,
+                    label_ref=label.label_id,
+                    added_by=request.added_by,
+                    added_at=_utc_now(),
+                )
+                current.golden.append(entry)
+                return entry
+        except NotFoundError as exc:
+            raise HTTPException(status_code=404, detail={"error": "label_not_found"}) from exc
 
     return app
