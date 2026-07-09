@@ -1783,6 +1783,41 @@
       "title": "ReviewEvent",
       "type": "object"
     },
+    "TaxonomyNode": {
+      "additionalProperties": false,
+      "description": "專案 Taxonomy 的一個節點；概念的權威身分。",
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "node_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "raw_text": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Raw Text",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "node_id",
+        "raw_text",
+        "created_at"
+      ],
+      "title": "TaxonomyNode",
+      "type": "object"
+    },
     "UnknownGeometry": {
       "additionalProperties": true,
       "description": "前向相容（F1）：未知幾何型別保留原文、標記不可解讀，不得丟棄。\n\n注意：已知型別若格式錯誤，必須報錯而非落入本類——否則壞資料會偽裝成未來資料。",

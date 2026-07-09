@@ -23,6 +23,7 @@ from visionforge_core.storage.repositories import (
     MediaRepository,
     ReviewEventRepository,
     RunRepository,
+    TaxonomyRepository,
 )
 
 MARKER = "project.json"
@@ -43,6 +44,7 @@ class Project:
         self.review_events = ReviewEventRepository(db)
         self.manifests = ManifestRepository(db)
         self.golden = GoldenRepository(db)
+        self.taxonomy = TaxonomyRepository(db)
 
     def close(self) -> None:
         self.db.close()

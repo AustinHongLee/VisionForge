@@ -97,8 +97,17 @@ CREATE TABLE golden_entries(
 );
 """
 
+_V0002 = """
+CREATE TABLE taxonomy(
+    node_id TEXT PRIMARY KEY,
+    raw_text TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+"""
+
 # 遷移只增不改：新版本＝追加項目（D9：任何歷史專案永遠打得開）。
-MIGRATIONS: tuple[tuple[int, str], ...] = ((1, _V0001),)
+MIGRATIONS: tuple[tuple[int, str], ...] = ((1, _V0001), (2, _V0002))
 MAX_SCHEMA = MIGRATIONS[-1][0]
 
 

@@ -55,6 +55,7 @@ from visionforge_core.contracts.providers import (
     ProviderRole,
     VisionTask,
 )
+from visionforge_core.contracts.taxonomy import TaxonomyNode
 
 __all__ = [
     "REASON_CODES",
@@ -104,6 +105,7 @@ __all__ = [
     "ReviewEvent",
     "ReviewStatus",
     "SourceKind",
+    "TaxonomyNode",
     "UnknownGeometry",
     "VisionTask",
     "WholeImage",
