@@ -21,6 +21,7 @@ from visionforge_core.contracts import (
     Label,
     MediaRecord,
     ReviewEvent,
+    TaxonomyNode,
 )
 from visionforge_core.storage.database import Database
 from visionforge_core.storage.errors import ConflictError, NotFoundError
@@ -320,3 +321,37 @@ class GoldenRepository:
             "SELECT json FROM golden_entries WHERE status = 'active' ORDER BY entry_id"
         )
         return [GoldenSetEntry.model_validate_json(r["json"]) for r in rows]
+
+
+class TaxonomyRepository:
+    """概念登記（ADR-0010）：get-or-create raw_text→節點。append-only（不改不刪）。"""
+
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def ensure(self, node: TaxonomyNode) -> TaxonomyNode:
+        """raw_text 已登記則回既有節點；否則插入並回傳傳入節點。"""
+        existing = self.get_by_text(node.raw_text)
+        if existing is not None:
+            return existing
+        _insert(
+            self._db,
+            "INSERT INTO taxonomy(node_id, raw_text, created_at, json) VALUES(?, ?, ?, ?)",
+            (node.node_id, node.raw_text, node.created_at.isoformat(), node.model_dump_json()),
+            f"taxonomy {node.raw_text}",
+        )
+        return node
+
+    def get_by_text(self, raw_text: str) -> TaxonomyNode | None:
+        row = self._db.query_one("SELECT json FROM taxonomy WHERE raw_text = ?", (raw_text,))
+        return TaxonomyNode.model_validate_json(row["json"]) if row else None
+
+    def get(self, node_id: str) -> TaxonomyNode:
+        row = self._db.query_one("SELECT json FROM taxonomy WHERE node_id = ?", (node_id,))
+        if row is None:
+            raise NotFoundError(f"taxonomy node {node_id} 不存在")
+        return TaxonomyNode.model_validate_json(row["json"])
+
+    def list(self) -> list[TaxonomyNode]:
+        rows = self._db.query_all("SELECT json FROM taxonomy ORDER BY created_at, node_id")
+        return [TaxonomyNode.model_validate_json(r["json"]) for r in rows]

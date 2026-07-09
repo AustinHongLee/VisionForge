@@ -217,6 +217,10 @@ export type LabelRef1 = string | null;
 export type SchemaVersion10 = "1.0";
 export type ReviewStatus2 =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
+export type CreatedAt3 = string;
+export type NodeId = string;
+export type RawText1 = string;
+export type SchemaVersion11 = "1.0";
 
 export interface VisionForgeContracts {
   [k: string]: unknown;
@@ -705,4 +709,16 @@ export interface ReviewEvent {
   label_ref?: LabelRef1;
   schema_version?: SchemaVersion10;
   to_status: ReviewStatus2;
+}
+/**
+ * 專案 Taxonomy 的一個節點；概念的權威身分。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "TaxonomyNode".
+ */
+export interface TaxonomyNode {
+  created_at: CreatedAt3;
+  node_id: NodeId;
+  raw_text: RawText1;
+  schema_version?: SchemaVersion11;
 }
