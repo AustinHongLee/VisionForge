@@ -126,6 +126,17 @@ class RunRepository:
         )
         return [Claim.model_validate_json(r["json"]) for r in rows]
 
+    def iter_pending_review(self) -> list[tuple[Claim, str, str]]:
+        """待審 claim（尚無任何 ReviewEvent）＋其 run_ref／media_hash。確定性排序。"""
+        rows = self._db.query_all(
+            "SELECT run_id, media_hash, json FROM claims "
+            "WHERE claim_id NOT IN (SELECT claim_ref FROM review_events) "
+            "ORDER BY claim_id"
+        )
+        return [
+            (Claim.model_validate_json(r["json"]), r["run_id"], r["media_hash"]) for r in rows
+        ]
+
 
 class LabelRepository:
     def __init__(self, db: Database) -> None:
