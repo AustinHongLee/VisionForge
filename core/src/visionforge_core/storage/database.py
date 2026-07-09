@@ -106,8 +106,16 @@ CREATE TABLE taxonomy(
 );
 """
 
+_V0003 = """
+CREATE TABLE calibrations(
+    calibration_id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+"""
+
 # 遷移只增不改：新版本＝追加項目（D9：任何歷史專案永遠打得開）。
-MIGRATIONS: tuple[tuple[int, str], ...] = ((1, _V0001), (2, _V0002))
+MIGRATIONS: tuple[tuple[int, str], ...] = ((1, _V0001), (2, _V0002), (3, _V0003))
 MAX_SCHEMA = MIGRATIONS[-1][0]
 
 

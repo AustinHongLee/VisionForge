@@ -15,6 +15,7 @@ from visionforge_core.storage.database import MAX_SCHEMA, Database
 from visionforge_core.storage.errors import NotAProjectError
 from visionforge_core.storage.media_store import MediaBlobStore
 from visionforge_core.storage.repositories import (
+    CalibrationRepository,
     CostRepository,
     DecisionRepository,
     GoldenRepository,
@@ -45,6 +46,7 @@ class Project:
         self.manifests = ManifestRepository(db)
         self.golden = GoldenRepository(db)
         self.taxonomy = TaxonomyRepository(db)
+        self.calibrations = CalibrationRepository(db)
 
     def close(self) -> None:
         self.db.close()

@@ -58,7 +58,8 @@
 | [票-0010-Electron-sidecar.md](06-規格票/票-0010-Electron-sidecar.md) | 規格票 | — | ⬛ 已結案 | L2 審查通過（Blocking 0）合併（bb835bf，PR #10）；Electron 起 sidecar＋health＋CSP 放行 127.0.0.1；CSP 快照測試護欄 |
 | [票-0011-看懂站畫框UI.md](06-規格票/票-0011-看懂站畫框UI.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（0e96871，PR #12，19 測試）；「看懂」站接後端、匯入→縮圖→偵測→**畫框**＋信賴度三色。**M0 第一個端到端達成** |
 | [票-0012-app-process-media.md](06-規格票/票-0012-app-process-media.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（e26eec3，PR #16，app 45 測試）；process_media 跑 provider→orchestrator 入帳存 run＋POST /process |
-| [票-0013-app審核API.md](06-規格票/票-0013-app審核API.md) | 規格票 | — | 🟨 已發出 | L0 免審：審核 API（GET /review/pending、POST /review/approve·reject、POST /golden）；接 core 審核狀態機（飛輪 #3/#4 app 側） |
+| [票-0013-app審核API.md](06-規格票/票-0013-app審核API.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（d803c55，PR #18，app 51 測試）；審核 API（pending/approve/reject/golden）接 core 狀態機 |
+| [票-0014-app校準接線.md](06-規格票/票-0014-app校準接線.md) | 規格票 | — | 🟨 已發出 | L0 免審：process_media/infer 套用最新快照回填信賴度＋POST /recalibrate（飛輪 #5 app 側，信賴度三色亮起） |
 | [GoodYolo_產品規劃書.md](03-規劃/GoodYolo_產品規劃書.md) | 規劃 | R1 | 🟧 部分失效 | 10 項設計被憲法附錄推翻；治理／審核／白話層章節仍為 R3 素材 |
 | [GoodYolo_架構評審_R2.md](04-評審/GoodYolo_架構評審_R2.md) | 評審 | R2 | 🟩 定案 | 結論已入憲；10.6 新骨架為 R3 與開發基準 |
 
