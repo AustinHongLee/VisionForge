@@ -28,13 +28,14 @@ from visionforge_core.providers import InferenceRequest, VisionProvider
 from visionforge_core.review import ClaimForReview, approve, list_pending, reject
 from visionforge_core.storage import Project, open_project
 from visionforge_core.storage.errors import NotFoundError
-from visionforge_providers import FixtureProvider
+from visionforge_providers import OpenAIProviderError
 
 from visionforge_app.export import ExportOutcome, export_dataset
 from visionforge_app.importer import import_media
 from visionforge_app.importer.errors import MediaImportError
 from visionforge_app.processing import UnknownMediaError, process_media
 from visionforge_app.processing.run import apply_latest_to_claims
+from visionforge_app.provider_config import load_provider
 from visionforge_app.query import MediaPage, list_media, thumbnail_path
 
 
@@ -141,6 +142,13 @@ def _claim_item(project: Project, claim_id: str, run_ref: str, media_hash: str) 
     return ClaimForReview(claim=claim, run_ref=run_ref, media_hash=media_hash)
 
 
+def _provider_unavailable(exc: OpenAIProviderError) -> HTTPException:
+    return HTTPException(
+        status_code=502,
+        detail={"error": "provider_unavailable", "message": str(exc)},
+    )
+
+
 def create_app(project: Project, provider: VisionProvider | None = None) -> FastAPI:
     """建立可測的 FastAPI app；不在 import 時啟動服務。"""
 
@@ -152,7 +160,7 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
         allow_origin_regex=_LOCAL_RENDERER_ORIGIN_RE,
         allow_origins=["null"],
     )
-    active_provider = provider or FixtureProvider()
+    provider_override = provider
     project_root = project.root
 
     @contextmanager
@@ -205,7 +213,14 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
             if blob is None:
                 raise HTTPException(status_code=404, detail={"error": "media_not_found"})
             data = blob.read_bytes()
-            result = active_provider.infer(data, InferenceRequest(concepts=tuple(request.concepts)))
+            active_provider = provider_override or load_provider(current)
+            try:
+                result = active_provider.infer(
+                    data,
+                    InferenceRequest(concepts=tuple(request.concepts)),
+                )
+            except OpenAIProviderError as exc:
+                raise _provider_unavailable(exc) from exc
             claims = apply_latest_to_claims(current, result.claims)
         return InferResponse(claims=claims, provider_id=result.provider_id)
 
@@ -217,10 +232,12 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
                     current,
                     request.media_hash,
                     request.concepts,
-                    provider=active_provider,
+                    provider=provider_override or load_provider(current),
                 )
         except UnknownMediaError as exc:
             raise HTTPException(status_code=404, detail={"error": "media_not_found"}) from exc
+        except OpenAIProviderError as exc:
+            raise _provider_unavailable(exc) from exc
         run = outcome.run
         return ProcessResponse(
             run_id=run.run_id,

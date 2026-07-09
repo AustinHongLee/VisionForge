@@ -23,3 +23,6 @@ out/
 # 產物與快取（未來）
 *.log
 .cache/
+
+# 本機 provider 金鑰設定（票-0017）
+provider-config.json
