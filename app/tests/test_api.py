@@ -173,7 +173,10 @@ def test_process_endpoint_records_run_summary(client: TestClient, project) -> No
     assert response.status_code == 200
     body = response.json()
     assert body["claim_count"] == 1
-    assert project.runs.get(body["run_id"]).run_id == body["run_id"]
+    run = project.runs.get(body["run_id"])
+    assert run.run_id == body["run_id"]
+    assert run.claims[0].confidence.reliability.value == "none"
+    assert run.claims[0].confidence.calibrated is None
     assert project.decisions.get(body["decision_ref"]).kind == "invoke_provider"
     assert len(project.costs.iter_by_subject("run", body["run_id"])) == 1
 
@@ -301,6 +304,54 @@ def test_golden_endpoint_registers_approved_label(client: TestClient) -> None:
     assert entry["status"] == "active"
     assert entry["label_ref"] == approved["label_id"]
     assert entry["media_hash"] == approved["media_hash"]
+
+
+def test_recalibrate_without_reviews_returns_204(client: TestClient) -> None:
+    response = client.post("/recalibrate")
+
+    assert response.status_code == 204
+    assert response.content == b""
+
+
+def test_recalibrate_updates_infer_confidence(client: TestClient) -> None:
+    imported = _import_image(client)
+    process = client.post(
+        "/process",
+        json={
+            "media_hash": imported["media_hash"],
+            "concepts": [{"raw_text": "bolt"} for _ in range(30)],
+        },
+    )
+    assert process.status_code == 200
+
+    pending = client.get("/review/pending").json()
+    assert len(pending) == 30
+    for item in pending:
+        approved = client.post(
+            "/review/approve",
+            json={
+                "claim_id": item["claim"]["claim_id"],
+                "run_ref": item["run_ref"],
+                "media_hash": item["media_hash"],
+                "reviewer": "alice",
+            },
+        )
+        assert approved.status_code == 200
+
+    recalibrated = client.post("/recalibrate")
+    assert recalibrated.status_code == 200
+    snapshot = recalibrated.json()
+
+    inferred = client.post(
+        "/infer",
+        json={"media_hash": imported["media_hash"], "concepts": [{"raw_text": "bolt"}]},
+    )
+
+    assert inferred.status_code == 200
+    confidence = inferred.json()["claims"][0]["confidence"]
+    assert confidence["reliability"] == "low"
+    assert confidence["calibrated"] is not None
+    assert confidence["calibration_ref"] == snapshot["calibration_id"]
 
 
 def test_review_and_golden_unknown_ids_return_404(client: TestClient) -> None:
