@@ -176,6 +176,11 @@ class LabelRepository:
         )
         return [Label.model_validate_json(r["json"]) for r in rows]
 
+    def iter_all(self) -> list[Label]:
+        """全部 Label（建 Dataset 版本快照用）；確定性排序。"""
+        rows = self._db.query_all("SELECT json FROM labels ORDER BY label_id")
+        return [Label.model_validate_json(r["json"]) for r in rows]
+
 
 class DecisionRepository:
     def __init__(self, db: Database) -> None:
