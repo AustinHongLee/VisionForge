@@ -3,7 +3,7 @@ name = "visionforge-providers"
 version = "0.1.0"
 description = "VisionForge Vision Provider 實作（userland；依賴方向 providers→core，ADR-0008）"
 requires-python = ">=3.12"
-dependencies = ["visionforge-core"]
+dependencies = ["visionforge-core", "openai==2.44.0"]
 
 [build-system]
 requires = ["hatchling"]

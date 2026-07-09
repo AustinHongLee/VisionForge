@@ -6,5 +6,6 @@
 """
 
 from visionforge_providers.fixture import FixtureProvider
+from visionforge_providers.openai_vision import OpenAIProviderError, OpenAIVisionProvider
 
-__all__ = ["FixtureProvider"]
+__all__ = ["FixtureProvider", "OpenAIProviderError", "OpenAIVisionProvider"]
