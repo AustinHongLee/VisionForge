@@ -162,6 +162,31 @@ def test_infer_unknown_media_returns_404(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_process_endpoint_records_run_summary(client: TestClient, project) -> None:
+    imported = _import_image(client)
+
+    response = client.post(
+        "/process",
+        json={"media_hash": imported["media_hash"], "concepts": [{"raw_text": "bolt"}]},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["claim_count"] == 1
+    assert project.runs.get(body["run_id"]).run_id == body["run_id"]
+    assert project.decisions.get(body["decision_ref"]).kind == "invoke_provider"
+    assert len(project.costs.iter_by_subject("run", body["run_id"])) == 1
+
+
+def test_process_unknown_media_returns_404(client: TestClient) -> None:
+    response = client.post(
+        "/process",
+        json={"media_hash": "f" * 64, "concepts": [{"raw_text": "bolt"}]},
+    )
+
+    assert response.status_code == 404
+
+
 def test_import_bad_bytes_returns_422(client: TestClient) -> None:
     response = client.post(
         "/import",
