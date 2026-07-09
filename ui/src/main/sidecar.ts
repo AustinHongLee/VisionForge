@@ -1,5 +1,7 @@
 import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
+import { existsSync } from "node:fs";
 import { createServer } from "node:net";
+import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 export const DEFAULT_SIDECAR_HEALTH_TIMEOUT_MS = 10_000;
@@ -28,6 +30,24 @@ export class SidecarStartError extends Error {
 }
 
 export const toApiBaseUrl = (port: number): string => `http://127.0.0.1:${port}`;
+
+export const resolveProviderConfigPath = (
+  projectPath: string,
+  env: NodeJS.ProcessEnv = process.env,
+  cwd = process.cwd(),
+  exists: (path: string) => boolean = existsSync,
+): string | undefined => {
+  if (env.VISIONFORGE_PROVIDER_CONFIG) {
+    return env.VISIONFORGE_PROVIDER_CONFIG;
+  }
+
+  const candidates = [
+    resolve(projectPath, "provider-config.json"),
+    resolve(cwd, "provider-config.json"),
+    resolve(cwd, "..", "provider-config.json"),
+  ];
+  return candidates.find((candidate) => exists(candidate));
+};
 
 export const pickFreeLoopbackPort = (): Promise<number> =>
   new Promise((resolve, reject) => {
@@ -84,8 +104,13 @@ export class SidecarManager {
       ...process.env,
       ...this.options.env,
       VISIONFORGE_API_PORT: String(port),
+      VISIONFORGE_PARENT_PID: String(process.pid),
       VISIONFORGE_PROJECT: this.options.projectPath,
     };
+    const providerConfigPath = resolveProviderConfigPath(this.options.projectPath, sidecarEnv);
+    if (providerConfigPath !== undefined) {
+      sidecarEnv.VISIONFORGE_PROVIDER_CONFIG = providerConfigPath;
+    }
     const pythonCommand =
       this.options.pythonCommand ?? sidecarEnv.VISIONFORGE_PYTHON ?? "python";
     let unavailableBeforeReady = false;

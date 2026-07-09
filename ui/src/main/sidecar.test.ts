@@ -5,6 +5,7 @@ import {
   SidecarManager,
   SidecarStartError,
   pickFreeLoopbackPort,
+  resolveProviderConfigPath,
   toApiBaseUrl,
 } from "./sidecar";
 
@@ -55,6 +56,7 @@ describe("sidecar", () => {
       expect.objectContaining({
         env: expect.objectContaining({
           VISIONFORGE_API_PORT: "45123",
+          VISIONFORGE_PARENT_PID: String(process.pid),
           VISIONFORGE_PROJECT: "C:/tmp/visionforge-project",
         }),
         windowsHide: true,
@@ -112,5 +114,27 @@ describe("sidecar", () => {
 
   it("formats only loopback API base URLs", () => {
     expect(toApiBaseUrl(8765)).toBe("http://127.0.0.1:8765");
+  });
+
+  it("keeps an explicit provider config path from the environment", () => {
+    expect(
+      resolveProviderConfigPath(
+        "C:/tmp/project",
+        { VISIONFORGE_PROVIDER_CONFIG: "C:/safe/provider-config.json" },
+        "C:/repo/ui",
+        () => false,
+      ),
+    ).toBe("C:/safe/provider-config.json");
+  });
+
+  it("finds a provider config in the dev repo root when the project is elsewhere", () => {
+    const found = resolveProviderConfigPath(
+      "C:/user-data/dev-project",
+      {},
+      "C:/repo/ui",
+      (path) => path.replaceAll("\\", "/") === "C:/repo/provider-config.json",
+    );
+
+    expect(found?.replaceAll("\\", "/")).toBe("C:/repo/provider-config.json");
   });
 });
