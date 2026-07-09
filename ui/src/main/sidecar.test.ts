@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { ChildProcess } from "node:child_process";
+import { join, resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
   SidecarManager,
@@ -128,13 +129,16 @@ describe("sidecar", () => {
   });
 
   it("finds a provider config in the dev repo root when the project is elsewhere", () => {
+    const repoRoot = resolve("repo-root");
+    const uiRoot = join(repoRoot, "ui");
+    const expectedConfig = join(repoRoot, "provider-config.json");
     const found = resolveProviderConfigPath(
-      "C:/user-data/dev-project",
+      join(resolve("user-data"), "dev-project"),
       {},
-      "C:/repo/ui",
-      (path) => path.replaceAll("\\", "/") === "C:/repo/provider-config.json",
+      uiRoot,
+      (path) => path === expectedConfig,
     );
 
-    expect(found?.replaceAll("\\", "/")).toBe("C:/repo/provider-config.json");
+    expect(found).toBe(expectedConfig);
   });
 });
