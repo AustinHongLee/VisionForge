@@ -16,6 +16,7 @@ from visionforge_core.providers import InferenceRequest, InferenceResult
 
 _PROVIDER_ID = "openai"
 _CROCKFORD32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+_OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 
 class OpenAIProviderError(RuntimeError):
@@ -25,8 +26,16 @@ class OpenAIProviderError(RuntimeError):
 class OpenAIVisionProvider:
     """OpenAI Responses API backed VisionProvider。"""
 
-    def __init__(self, *, api_key: str, model: str, client: object | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        api_key: str,
+        model: str,
+        client: object | None = None,
+        base_url: str = _OPENAI_BASE_URL,
+    ) -> None:
         self._api_key = api_key
+        self._base_url = base_url
         self._model = model
         self._client = client
 
@@ -59,7 +68,11 @@ class OpenAIVisionProvider:
         )
 
     def _responses_create(self, media_bytes: bytes, request: InferenceRequest) -> object:
-        client = self._client if self._client is not None else _default_client(self._api_key)
+        client = (
+            self._client
+            if self._client is not None
+            else _default_client(self._api_key, self._base_url)
+        )
         return client.responses.create(
             model=self._model,
             input=[
@@ -79,10 +92,10 @@ class OpenAIVisionProvider:
         )
 
 
-def _default_client(api_key: str) -> object:
+def _default_client(api_key: str, base_url: str) -> object:
     from openai import OpenAI
 
-    return OpenAI(api_key=api_key)
+    return OpenAI(api_key=api_key, base_url=base_url)
 
 
 def _prompt(request: InferenceRequest) -> str:

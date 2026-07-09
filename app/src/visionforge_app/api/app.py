@@ -28,6 +28,7 @@ from visionforge_core.providers import InferenceRequest, VisionProvider
 from visionforge_core.review import ClaimForReview, approve, list_pending, reject
 from visionforge_core.storage import Project, open_project
 from visionforge_core.storage.errors import NotFoundError
+from visionforge_providers import OpenAIProviderError
 
 from visionforge_app.export import ExportOutcome, export_dataset
 from visionforge_app.importer import import_media
@@ -141,6 +142,13 @@ def _claim_item(project: Project, claim_id: str, run_ref: str, media_hash: str) 
     return ClaimForReview(claim=claim, run_ref=run_ref, media_hash=media_hash)
 
 
+def _provider_unavailable(exc: OpenAIProviderError) -> HTTPException:
+    return HTTPException(
+        status_code=502,
+        detail={"error": "provider_unavailable", "message": str(exc)},
+    )
+
+
 def create_app(project: Project, provider: VisionProvider | None = None) -> FastAPI:
     """建立可測的 FastAPI app；不在 import 時啟動服務。"""
 
@@ -206,7 +214,13 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
                 raise HTTPException(status_code=404, detail={"error": "media_not_found"})
             data = blob.read_bytes()
             active_provider = provider_override or load_provider(current)
-            result = active_provider.infer(data, InferenceRequest(concepts=tuple(request.concepts)))
+            try:
+                result = active_provider.infer(
+                    data,
+                    InferenceRequest(concepts=tuple(request.concepts)),
+                )
+            except OpenAIProviderError as exc:
+                raise _provider_unavailable(exc) from exc
             claims = apply_latest_to_claims(current, result.claims)
         return InferResponse(claims=claims, provider_id=result.provider_id)
 
@@ -222,6 +236,8 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
                 )
         except UnknownMediaError as exc:
             raise HTTPException(status_code=404, detail={"error": "media_not_found"}) from exc
+        except OpenAIProviderError as exc:
+            raise _provider_unavailable(exc) from exc
         run = outcome.run
         return ProcessResponse(
             run_id=run.run_id,

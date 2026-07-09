@@ -12,7 +12,7 @@ from visionforge_app.provider_config import load_provider
 from visionforge_core.contracts import BBox, Claim, Concept, Confidence, ProviderCapability
 from visionforge_core.providers import InferenceRequest, InferenceResult
 from visionforge_core.storage import create_project
-from visionforge_providers import FixtureProvider, OpenAIVisionProvider
+from visionforge_providers import FixtureProvider, OpenAIProviderError, OpenAIVisionProvider
 
 
 @pytest.fixture()
@@ -99,6 +99,26 @@ class SingleClaimProvider:
         )
 
 
+class FailingProvider:
+    @property
+    def capability(self) -> ProviderCapability:
+        return ProviderCapability(
+            provider_id="failing-provider",
+            version="0.1.0",
+            role="teacher",
+            locality="cloud",
+            tasks=("detect",),
+            promptable_by=("text",),
+            reproducible=False,
+            trainable=False,
+            cost_profile="paid_remote",
+        )
+
+    def infer(self, media_bytes: bytes, request: InferenceRequest) -> InferenceResult:
+        del media_bytes, request
+        raise OpenAIProviderError("OpenAI provider failed: invalid key [redacted]")
+
+
 def test_api_uses_loaded_provider_when_no_override(project, monkeypatch) -> None:
     monkeypatch.setattr(
         "visionforge_app.api.app.load_provider",
@@ -120,3 +140,29 @@ def test_api_uses_loaded_provider_when_no_override(project, monkeypatch) -> None
     body = response.json()
     assert body["provider_id"] == "loaded-provider"
     assert body["claims"][0]["confidence"]["raw"] == 0.88
+
+
+def test_api_provider_error_returns_cors_502(project, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "visionforge_app.api.app.load_provider",
+        lambda current: FailingProvider(),
+    )
+    client = TestClient(create_app(project))
+    imported = client.post(
+        "/import",
+        files={"file": ("sample.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+    assert imported.status_code == 200
+
+    response = client.post(
+        "/infer",
+        json={"media_hash": imported.json()["media_hash"], "concepts": [{"raw_text": "cat"}]},
+        headers={"origin": "http://localhost:5173"},
+    )
+
+    assert response.status_code == 502
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    body = response.json()
+    assert body["detail"]["error"] == "provider_unavailable"
+    assert body["detail"]["message"] == "OpenAI provider failed: invalid key [redacted]"
+    assert "sk-" not in body["detail"]["message"]

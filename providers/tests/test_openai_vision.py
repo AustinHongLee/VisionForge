@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import sys
+import types
 
 import pytest
 from visionforge_core.contracts import BBox, Concept, ProviderCapability
 from visionforge_core.providers import InferenceRequest, VisionProvider
-from visionforge_providers import OpenAIProviderError, OpenAIVisionProvider
+from visionforge_providers import OpenAIProviderError, OpenAIVisionProvider, openai_vision
 
 
 class FakeResponse:
@@ -140,3 +142,23 @@ def test_openai_provider_empty_concepts_skips_client_call() -> None:
 
     assert result.claims == ()
     assert responses.calls == []
+
+
+def test_default_client_pins_official_openai_base_url(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    class FakeOpenAI:
+        def __init__(self, **kwargs) -> None:
+            captured.update(kwargs)
+
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    monkeypatch.setitem(
+        sys.modules,
+        "openai",
+        types.SimpleNamespace(OpenAI=FakeOpenAI),
+    )
+
+    openai_vision._default_client("sk-test-secret", openai_vision._OPENAI_BASE_URL)
+
+    assert captured["api_key"] == "sk-test-secret"
+    assert captured["base_url"] == "https://api.openai.com/v1"
