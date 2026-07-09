@@ -26,3 +26,6 @@ out/
 
 # 本機 provider 金鑰設定（票-0017）
 provider-config.json
+
+# 本機測試專案（start-visionforge.bat）
+_devproj/
