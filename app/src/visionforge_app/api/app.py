@@ -9,11 +9,13 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Response, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from starlette.middleware.cors import CORSMiddleware
+from visionforge_core.calibration import recalibrate
 from visionforge_core.contracts import (
+    CalibrationSnapshot,
     Claim,
     Concept,
     GoldenSetEntry,
@@ -31,6 +33,7 @@ from visionforge_providers import FixtureProvider
 from visionforge_app.importer import import_media
 from visionforge_app.importer.errors import MediaImportError
 from visionforge_app.processing import UnknownMediaError, process_media
+from visionforge_app.processing.run import apply_latest_to_claims
 from visionforge_app.query import MediaPage, list_media, thumbnail_path
 
 
@@ -188,8 +191,9 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
             if blob is None:
                 raise HTTPException(status_code=404, detail={"error": "media_not_found"})
             data = blob.read_bytes()
-        result = active_provider.infer(data, InferenceRequest(concepts=tuple(request.concepts)))
-        return InferResponse(claims=result.claims, provider_id=result.provider_id)
+            result = active_provider.infer(data, InferenceRequest(concepts=tuple(request.concepts)))
+            claims = apply_latest_to_claims(current, result.claims)
+        return InferResponse(claims=claims, provider_id=result.provider_id)
 
     @app.post("/process", response_model=ProcessResponse)
     def process(request: ProcessRequest) -> ProcessResponse:
@@ -268,5 +272,18 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
                 return entry
         except NotFoundError as exc:
             raise HTTPException(status_code=404, detail={"error": "label_not_found"}) from exc
+
+    @app.post("/recalibrate", response_model=CalibrationSnapshot)
+    def recalibrate_endpoint() -> CalibrationSnapshot | Response:
+        with request_project() as current:
+            snapshot = recalibrate(
+                current,
+                calibration_id=_new_ulid(),
+                created_at=_utc_now(),
+                golden_manifest_ref=_new_ulid(),
+            )
+        if snapshot is None:
+            return Response(status_code=204)
+        return snapshot
 
     return app

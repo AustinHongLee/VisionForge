@@ -8,7 +8,17 @@ import pytest
 from PIL import Image
 from visionforge_app.importer import import_media
 from visionforge_app.processing import UnknownMediaError, process_media
-from visionforge_core.contracts import Concept, MediaSource
+from visionforge_core.calibration import CalibrationObservation, calibrate
+from visionforge_core.contracts import (
+    BBox,
+    Claim,
+    Concept,
+    Confidence,
+    MediaSource,
+    ProviderCapability,
+    Reliability,
+)
+from visionforge_core.providers import InferenceRequest, InferenceResult
 from visionforge_core.storage import create_project
 
 NOW = datetime(2026, 7, 9, 9, 30, 0, tzinfo=timezone.utc)
@@ -64,6 +74,8 @@ def test_process_media_records_run_decision_cost_and_outcome(tmp_path: Path) -> 
         assert project.runs.get(run.run_id).run_id == run.run_id
         assert len(run.claims) == 1
         assert run.claims[0].concept.raw_text == "bolt"
+        assert run.claims[0].confidence.reliability is Reliability.none
+        assert run.claims[0].confidence.calibrated is None
         assert project.runs.get_claim(run.claims[0].claim_id).concept.raw_text == "bolt"
 
         decision = project.decisions.get(run.decision_ref)
@@ -74,6 +86,65 @@ def test_process_media_records_run_decision_cost_and_outcome(tmp_path: Path) -> 
         outcomes = project.decisions.iter_outcomes(run.decision_ref)
         assert len(outcomes) == 1
         assert outcomes[0].status == "success"
+    finally:
+        project.close()
+
+
+class StaticBoltProvider:
+    @property
+    def capability(self) -> ProviderCapability:
+        return ProviderCapability(
+            provider_id="static-fixture",
+            version="0.1.0",
+            role="teacher",
+            locality="local",
+            tasks=("detect",),
+            promptable_by=("text",),
+            reproducible=True,
+            trainable=False,
+            cost_profile="free_local",
+        )
+
+    def infer(self, media_bytes: bytes, request: InferenceRequest) -> InferenceResult:
+        del media_bytes, request
+        return InferenceResult(
+            claims=(
+                Claim(
+                    claim_id="0000000000000000000000000E",
+                    geometry=BBox(x1=0.1, y1=0.1, x2=0.4, y2=0.4),
+                    concept=Concept(raw_text="bolt"),
+                    confidence=Confidence(raw=0.9),
+                ),
+            ),
+            provider_id="static-fixture",
+        )
+
+
+def test_process_media_persists_latest_calibration(tmp_path: Path) -> None:
+    project = _project(tmp_path, "calibrated")
+    try:
+        snapshot = calibrate(
+            [CalibrationObservation(concept_key="bolt", raw=0.9, correct=True) for _ in range(30)],
+            calibration_id="0000000000000000000000000F",
+            created_at=NOW,
+            golden_manifest_ref="0000000000000000000000000G",
+        )
+        project.calibrations.append(snapshot)
+        media_hash = _import_sample(project)
+
+        outcome = process_media(
+            project,
+            media_hash,
+            [Concept(raw_text="bolt")],
+            provider=StaticBoltProvider(),
+            now=NOW,
+            id_factory=_id_factory(),
+        )
+
+        stored = project.runs.get_claim(outcome.run.claims[0].claim_id)
+        assert stored.confidence.reliability is Reliability.low
+        assert stored.confidence.calibrated is not None
+        assert stored.confidence.calibration_ref == snapshot.calibration_id
     finally:
         project.close()
 

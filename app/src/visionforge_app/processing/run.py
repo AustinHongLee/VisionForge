@@ -10,7 +10,8 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from visionforge_core.contracts import Concept, InferenceRun, MediaSubject, Producer
+from visionforge_core.calibration import apply_latest
+from visionforge_core.contracts import Claim, Concept, InferenceRun, MediaSubject, Producer
 from visionforge_core.orchestrator import record_inference_run
 from visionforge_core.providers import InferenceRequest, VisionProvider
 from visionforge_core.storage import Project
@@ -50,6 +51,22 @@ def _params_hash(*, concepts: Sequence[Concept], task: str, provider_id: str, ve
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def apply_latest_to_claims(project: Project, claims: Sequence[Claim]) -> tuple[Claim, ...]:
+    """用最新校準快照回填 claims；無快照時 core 會原樣返回 confidence。"""
+    return tuple(
+        claim.model_copy(
+            update={
+                "confidence": apply_latest(
+                    project,
+                    claim.confidence,
+                    claim.concept.raw_text,
+                )
+            }
+        )
+        for claim in claims
+    )
+
+
 def process_media(
     project: Project,
     media_hash: str,
@@ -74,6 +91,7 @@ def process_media(
     request = InferenceRequest(concepts=tuple(concepts))
     start = time.perf_counter()
     result = active_provider.infer(blob.read_bytes(), request)
+    calibrated_claims = apply_latest_to_claims(project, result.claims)
     duration_ms = 0 if now is not None else max(0, int((time.perf_counter() - start) * 1000))
     effective_now = now or datetime.now(timezone.utc)
     next_id = id_factory or _new_ulid
@@ -97,7 +115,7 @@ def process_media(
         subject=subject,
         producer=producer,
         task=task,
-        claims=result.claims,
+        claims=calibrated_claims,
         duration_ms=duration_ms,
         run_id=next_id(),
         decision_id=next_id(),
