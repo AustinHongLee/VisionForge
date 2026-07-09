@@ -61,7 +61,8 @@
 | [票-0013-app審核API.md](06-規格票/票-0013-app審核API.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（d803c55，PR #18，app 51 測試）；審核 API（pending/approve/reject/golden）接 core 狀態機 |
 | [票-0014-app校準接線.md](06-規格票/票-0014-app校準接線.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（68edb82，PR #20，app 54 測試）；process_media/infer 回填信賴度＋POST /recalibrate |
 | [票-0015-整理站審核UI.md](06-規格票/票-0015-整理站審核UI.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（0183702，PR #21，ui 25 測試）；「整理」站審核 UI。**M0 資料飛輪完整閉合** |
-| [票-0016-app資料集匯出.md](06-規格票/票-0016-app資料集匯出.md) | 規格票 | — | 🟨 已發出 | L0 免審：POST /export 建版本快照＋寫 YOLO/COCO（class 由 Taxonomy 映射）；**M0 收尾＝可出貨** |
+| [票-0016-app資料集匯出.md](06-規格票/票-0016-app資料集匯出.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（de219fb，PR #23，app 59 測試）；POST /export 版本快照＋YOLO/COCO。**M0 資料工房完整可出貨** |
+| [票-0017-OpenAI-provider.md](06-規格票/票-0017-OpenAI-provider.md) | 規格票 | — | 🟨 已發出 | L2 必審：第一個真實 provider（OpenAI 雲端 VLM）；金鑰放 gitignore JSON、預設 fixture（離線優先）；drop-in 換老師（Architect 合併前審） |
 | [GoodYolo_產品規劃書.md](03-規劃/GoodYolo_產品規劃書.md) | 規劃 | R1 | 🟧 部分失效 | 10 項設計被憲法附錄推翻；治理／審核／白話層章節仍為 R3 素材 |
 | [GoodYolo_架構評審_R2.md](04-評審/GoodYolo_架構評審_R2.md) | 評審 | R2 | 🟩 定案 | 結論已入憲；10.6 新骨架為 R3 與開發基準 |
 
