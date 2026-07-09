@@ -17,6 +17,7 @@ from visionforge_providers import FixtureProvider
 
 from visionforge_app.importer import import_media
 from visionforge_app.importer.errors import MediaImportError
+from visionforge_app.processing import UnknownMediaError, process_media
 from visionforge_app.query import MediaPage, list_media, thumbnail_path
 
 
@@ -38,6 +39,18 @@ class InferRequest(BaseModel):
 class InferResponse(BaseModel):
     claims: tuple[Claim, ...]
     provider_id: str
+
+
+class ProcessRequest(BaseModel):
+    media_hash: str
+    concepts: list[Concept] = Field(default_factory=list)
+
+
+class ProcessResponse(BaseModel):
+    run_id: str
+    claim_count: int
+    decision_ref: str
+    cost_ref: str
 
 
 _LOCAL_RENDERER_ORIGIN_RE = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
@@ -109,5 +122,25 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
             data = blob.read_bytes()
         result = active_provider.infer(data, InferenceRequest(concepts=tuple(request.concepts)))
         return InferResponse(claims=result.claims, provider_id=result.provider_id)
+
+    @app.post("/process", response_model=ProcessResponse)
+    def process(request: ProcessRequest) -> ProcessResponse:
+        try:
+            with request_project() as current:
+                outcome = process_media(
+                    current,
+                    request.media_hash,
+                    request.concepts,
+                    provider=active_provider,
+                )
+        except UnknownMediaError as exc:
+            raise HTTPException(status_code=404, detail={"error": "media_not_found"}) from exc
+        run = outcome.run
+        return ProcessResponse(
+            run_id=run.run_id,
+            claim_count=len(run.claims),
+            decision_ref=run.decision_ref,
+            cost_ref=run.cost_ref,
+        )
 
     return app
