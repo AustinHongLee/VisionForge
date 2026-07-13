@@ -6,12 +6,19 @@ import hashlib
 import json
 import secrets
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from visionforge_core.calibration import apply_latest
-from visionforge_core.contracts import Claim, Concept, InferenceRun, MediaSubject, Producer
+from visionforge_core.contracts import (
+    Claim,
+    ClaimTeachingContext,
+    Concept,
+    InferenceRun,
+    MediaSubject,
+    Producer,
+)
 from visionforge_core.orchestrator import record_inference_run
 from visionforge_core.providers import InferenceRequest, VisionProvider
 from visionforge_core.storage import Project
@@ -85,6 +92,8 @@ def process_media(
     *,
     provider: VisionProvider | None = None,
     task: str = "detect",
+    teaching_task_id: str | None = None,
+    concept_ids_by_name: Mapping[str, str] | None = None,
     now: datetime | None = None,
     id_factory: Callable[[], str] | None = None,
 ) -> ProcessOutcome:
@@ -126,17 +135,38 @@ def process_media(
         width_px=record.width_px,
         height_px=record.height_px,
     )
-    run = record_inference_run(
-        project,
-        subject=subject,
-        producer=producer,
-        task=task,
-        claims=persisted_claims,
-        duration_ms=duration_ms,
-        run_id=run_id,
-        decision_id=next_id(),
-        cost_id=next_id(),
-        outcome_id=next_id(),
-        now=effective_now,
-    )
+    with project.db.transaction():
+        run = record_inference_run(
+            project,
+            subject=subject,
+            producer=producer,
+            task=task,
+            claims=persisted_claims,
+            duration_ms=duration_ms,
+            run_id=run_id,
+            decision_id=next_id(),
+            cost_id=next_id(),
+            outcome_id=next_id(),
+            now=effective_now,
+        )
+        if concept_ids_by_name is not None:
+            if teaching_task_id is None:
+                raise ValueError("建立教學 Claim 關聯時必須提供 teaching_task_id")
+            normalized = {
+                name.casefold(): concept_id
+                for name, concept_id in concept_ids_by_name.items()
+            }
+            for claim in run.claims:
+                concept_id = normalized.get(claim.concept.raw_text.casefold())
+                if concept_id is None:
+                    raise ValueError(
+                        f"Provider 回傳未在本次教學範圍的概念：{claim.concept.raw_text}"
+                    )
+                project.claim_teaching_context.add(
+                    ClaimTeachingContext(
+                        claim_id=claim.claim_id,
+                        task_id=teaching_task_id,
+                        concept_id=concept_id,
+                    )
+                )
     return ProcessOutcome(run=run)

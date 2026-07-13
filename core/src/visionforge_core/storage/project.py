@@ -15,15 +15,21 @@ from visionforge_core.storage.database import MAX_SCHEMA, Database
 from visionforge_core.storage.errors import NotAProjectError
 from visionforge_core.storage.media_store import MediaBlobStore
 from visionforge_core.storage.repositories import (
+    AnnotationRepository,
     CalibrationRepository,
+    ClaimTeachingContextRepository,
+    ConceptRepository,
     CostRepository,
+    CoverageRepository,
     DecisionRepository,
     GoldenRepository,
     LabelRepository,
     ManifestRepository,
+    MediaAssignmentRepository,
     MediaRepository,
     ReviewEventRepository,
     RunRepository,
+    TaskRepository,
     TaxonomyRepository,
 )
 
@@ -38,6 +44,12 @@ class Project:
         self.db = db
         self.blobs = MediaBlobStore(root / "media" / "blobs")
         self.media = MediaRepository(db)
+        self.tasks = TaskRepository(db)
+        self.concepts = ConceptRepository(db)
+        self.assignments = MediaAssignmentRepository(db)
+        self.coverage = CoverageRepository(db)
+        self.annotations = AnnotationRepository(db)
+        self.claim_teaching_context = ClaimTeachingContextRepository(db)
         self.runs = RunRepository(db)
         self.labels = LabelRepository(db)
         self.decisions = DecisionRepository(db)

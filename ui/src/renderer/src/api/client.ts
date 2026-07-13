@@ -1,9 +1,16 @@
 import type {
+  AnnotationRevision,
+  BBox,
   CalibrationSnapshot,
   Claim,
   Concept,
+  ConceptDefinition,
+  CoverageRecord,
+  CoverageState,
   Label,
   MediaRecord,
+  MediaAssignment,
+  TaskRecord,
 } from "../../../shared/contracts.generated";
 
 export interface MediaPage {
@@ -39,6 +46,20 @@ export interface ReviewDecisionInput {
 export interface RejectResult {
   event_id: string;
   to_status: string;
+}
+
+export interface TeachingState {
+  task: TaskRecord;
+  assignment: MediaAssignment;
+  concepts: ConceptDefinition[];
+  coverage: CoverageRecord[];
+  annotations: AnnotationRevision[];
+  teacher_claims: Claim[];
+}
+
+export interface TeachResult {
+  run_id: string;
+  claims: Claim[];
 }
 
 export class ApiError extends Error {
@@ -138,3 +159,88 @@ export const recalibrate = async (): Promise<CalibrationSnapshot | null> => {
   }
   return parseResponse<CalibrationSnapshot>(response);
 };
+
+const jsonRequest = async <T>(path: string, method: string, body?: unknown): Promise<T> => {
+  const baseUrl = await getBaseUrl();
+  const response = await fetch(`${baseUrl}${path}`, {
+    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: body === undefined ? undefined : { "content-type": "application/json" },
+    method,
+  });
+  return parseResponse<T>(response);
+};
+
+export const listTasks = async (): Promise<TaskRecord[]> => jsonRequest("/tasks", "GET");
+
+export const createTask = async (name: string): Promise<TaskRecord> =>
+  jsonRequest("/tasks", "POST", { name });
+
+export const listConcepts = async (taskId: string): Promise<ConceptDefinition[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/concepts`, "GET");
+
+export const createConcept = async (
+  taskId: string,
+  displayName: string,
+): Promise<ConceptDefinition> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/concepts`, "POST", {
+    display_name: displayName,
+  });
+
+export const assignMedia = async (
+  taskId: string,
+  mediaHash: string,
+): Promise<MediaAssignment> =>
+  jsonRequest(
+    `/tasks/${encodeURIComponent(taskId)}/media/${encodeURIComponent(mediaHash)}`,
+    "POST",
+    {},
+  );
+
+export const teachingState = async (
+  taskId: string,
+  mediaHash: string,
+): Promise<TeachingState> =>
+  jsonRequest(
+    `/tasks/${encodeURIComponent(taskId)}/media/${encodeURIComponent(mediaHash)}/teaching`,
+    "GET",
+  );
+
+export const teach = async (
+  taskId: string,
+  mediaHash: string,
+  conceptIds: string[],
+): Promise<TeachResult> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/teach`, "POST", {
+    concept_ids: conceptIds,
+    media_hash: mediaHash,
+  });
+
+export const addAnnotation = async (body: {
+  task_id: string;
+  media_hash: string;
+  concept_id: string;
+  bbox?: BBox;
+  source_claim_ref?: string;
+}): Promise<AnnotationRevision> => jsonRequest("/annotations", "POST", body);
+
+export const editAnnotation = async (
+  annotationId: string,
+  conceptId: string,
+  bbox: BBox,
+): Promise<AnnotationRevision> =>
+  jsonRequest(`/annotations/${encodeURIComponent(annotationId)}`, "PATCH", {
+    bbox,
+    concept_id: conceptId,
+  });
+
+export const deleteAnnotation = async (
+  annotationId: string,
+): Promise<AnnotationRevision> =>
+  jsonRequest(`/annotations/${encodeURIComponent(annotationId)}`, "DELETE");
+
+export const updateCoverage = async (body: {
+  task_id: string;
+  media_hash: string;
+  concept_id: string;
+  state: CoverageState;
+}): Promise<CoverageRecord> => jsonRequest("/coverage", "PUT", body);

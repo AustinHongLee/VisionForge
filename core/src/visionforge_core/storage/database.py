@@ -114,8 +114,68 @@ CREATE TABLE calibrations(
 );
 """
 
+_V0004 = """
+CREATE TABLE tasks(
+    task_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE TABLE concepts(
+    concept_id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    display_name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(task_id, display_name)
+);
+CREATE INDEX idx_concepts_task ON concepts(task_id);
+CREATE TABLE media_assignments(
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    media_hash TEXT NOT NULL REFERENCES media(media_hash),
+    source_group_id TEXT NOT NULL,
+    assigned_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    PRIMARY KEY(task_id, media_hash)
+);
+CREATE INDEX idx_assignments_group ON media_assignments(task_id, source_group_id);
+CREATE TABLE coverage(
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    media_hash TEXT NOT NULL REFERENCES media(media_hash),
+    concept_id TEXT NOT NULL REFERENCES concepts(concept_id),
+    state TEXT NOT NULL,
+    json TEXT NOT NULL,
+    PRIMARY KEY(task_id, media_hash, concept_id)
+);
+CREATE INDEX idx_coverage_task_state ON coverage(task_id, state);
+CREATE TABLE annotation_revisions(
+    revision_id TEXT PRIMARY KEY,
+    annotation_id TEXT NOT NULL,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    media_hash TEXT NOT NULL REFERENCES media(media_hash),
+    concept_id TEXT NOT NULL REFERENCES concepts(concept_id),
+    created_at TEXT NOT NULL,
+    status TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_annotations_scope ON annotation_revisions(task_id, media_hash, concept_id);
+CREATE INDEX idx_annotations_identity ON annotation_revisions(annotation_id, created_at);
+CREATE TABLE claim_teaching_context(
+    claim_id TEXT PRIMARY KEY REFERENCES claims(claim_id),
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    concept_id TEXT NOT NULL REFERENCES concepts(concept_id),
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_claim_context_scope ON claim_teaching_context(task_id, concept_id);
+"""
+
 # 遷移只增不改：新版本＝追加項目（D9：任何歷史專案永遠打得開）。
-MIGRATIONS: tuple[tuple[int, str], ...] = ((1, _V0001), (2, _V0002), (3, _V0003))
+MIGRATIONS: tuple[tuple[int, str], ...] = (
+    (1, _V0001),
+    (2, _V0002),
+    (3, _V0003),
+    (4, _V0004),
+)
 MAX_SCHEMA = MIGRATIONS[-1][0]
 
 

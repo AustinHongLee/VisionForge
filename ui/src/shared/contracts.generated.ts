@@ -1,10 +1,22 @@
 /* AUTO-GENERATED — 由 schema 生成，請勿手改 */
 
+export type AnnotationId = string;
 export type Type = "bbox";
 export type X1 = number;
 export type X2 = number;
 export type Y1 = number;
 export type Y2 = number;
+export type ConceptId = string;
+export type CreatedAt = string;
+export type CreatedBy = string;
+export type MediaHash = string;
+export type ReplacesRevisionId = string | null;
+export type RevisionId = string;
+export type SchemaVersion = "1.0";
+export type AnnotationSource = "manual" | "teacher_accepted" | "teacher_edited" | "imported";
+export type SourceClaimRef = string | null;
+export type Status = "active" | "retracted";
+export type TaskId = string;
 /**
  * @minItems 1
  */
@@ -18,13 +30,13 @@ export type Reliability = "none" | "low" | "high";
 export type ShrinkageWeight = number;
 export type Threshold = number;
 export type Classes = ClassCalibration[];
-export type CreatedAt = string;
+export type CreatedAt1 = string;
 export type GlobalThreshold = number;
 export type GoldenManifestRef = string;
 export type Method = "shrinkage_eb_v1";
 export type PrecisionTarget = number;
 export type PriorStrength = number;
-export type SchemaVersion = "1.0";
+export type SchemaVersion1 = "1.0";
 export type AuditionScore = number | null;
 export type CapabilityOk = boolean;
 export type EstimatedCostRef = string | null;
@@ -71,6 +83,15 @@ export type ReviewedAt = string | null;
 export type Reviewer = string | null;
 export type ReviewStatus =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
+export type ClaimId1 = string;
+export type ConceptId1 = string;
+export type TaskId1 = string;
+export type Aliases = string[];
+export type ConceptId2 = string;
+export type CreatedAt2 = string;
+export type DisplayName = string;
+export type SchemaVersion2 = "1.0";
+export type TaskId2 = string;
 export type Id = string;
 export type Kind1 = "provider" | "human";
 export type Version = string | null;
@@ -84,7 +105,7 @@ export type Measurements = [CostMeasurement, ...CostMeasurement[]];
 export type Amount = number | string;
 export type Unit = string;
 export type Phase = "estimate" | "actual";
-export type SchemaVersion1 = "1.0";
+export type SchemaVersion3 = "1.0";
 export type Id1 = string;
 export type Kind2 =
   | "media"
@@ -102,9 +123,16 @@ export type Kind2 =
   | "training_run"
   | "export_job"
   | "data_job";
-export type CreatedAt1 = string;
+export type ConceptId3 = string;
+export type MediaHash1 = string;
+export type Reviewer1 = string | null;
+export type SchemaVersion4 = "1.0";
+export type CoverageState = "unverified" | "verified_complete" | "verified_absent";
+export type TaskId3 = string;
+export type VerifiedAt = string | null;
+export type CreatedAt3 = string;
 export type LabelRefs = string[];
-export type MediaHash = string;
+export type MediaHash2 = string;
 export type Split = "train" | "val";
 export type Entries = ManifestEntry[];
 export type GateDecisionRef = string | null;
@@ -113,7 +141,7 @@ export type ParentRef = string | null;
 export type Human = number;
 export type Imported = number;
 export type MachineAssisted = number;
-export type SchemaVersion2 = "1.0";
+export type SchemaVersion5 = "1.0";
 export type VersionId = string;
 export type VersionNumber = number;
 export type ReasonCode = string;
@@ -123,8 +151,8 @@ export type DecisionRef = string;
 export type Detail = string;
 export type OutcomeId = string;
 export type ProducedRefs = InputRef[];
-export type SchemaVersion3 = "1.0";
-export type Status = "success" | "failure" | "cancelled" | "partial";
+export type SchemaVersion6 = "1.0";
+export type Status1 = "success" | "failure" | "cancelled" | "partial";
 export type Actor1 = string;
 export type At2 = string;
 export type Candidates = CandidateProvider[];
@@ -139,18 +167,18 @@ export type Kind3 =
 export type OverridesRef = string | null;
 export type PolicyHash = string;
 export type PolicyLabel = string;
-export type SchemaVersion4 = "1.0";
+export type SchemaVersion7 = "1.0";
 export type AddedAt = string;
 export type AddedBy = string;
 export type EntryId = string;
 export type LabelRef = string;
-export type MediaHash1 = string;
+export type MediaHash3 = string;
 export type RetiredReason = string | null;
-export type SchemaVersion5 = "1.0";
-export type Status1 = "active" | "retired";
+export type SchemaVersion8 = "1.0";
+export type Status2 = "active" | "retired";
 export type Claims = Claim[];
 export type CostRef = string;
-export type CreatedAt2 = string;
+export type CreatedAt4 = string;
 export type DecisionRef1 = string;
 export type DurationMs = number;
 export type ParamsHash = string;
@@ -158,28 +186,33 @@ export type PromptRef = string | null;
 export type ProviderId1 = string;
 export type ProviderVersion1 = string;
 export type RunId = string;
-export type SchemaVersion6 = "1.0";
+export type SchemaVersion9 = "1.0";
 export type HeightPx = number;
-export type MediaHash2 = string;
+export type MediaHash4 = string;
 export type WidthPx = number;
 export type Task = string;
 export type Assertion1 = "presence" | "absence";
 export type ClaimRef = string;
 export type FinalGeometry = BBox | Polygon | MaskRef | Keypoints | WholeImage | UnknownGeometry;
 export type LabelId = string;
-export type MediaHash3 = string;
+export type MediaHash5 = string;
 export type ReviewedAt1 = string;
-export type Reviewer1 = string;
+export type Reviewer2 = string;
 export type RunRef = string;
-export type SchemaVersion7 = "1.0";
+export type SchemaVersion10 = "1.0";
 export type SourceStatus = "approved" | "edited_approved";
+export type AssignedAt = string;
+export type MediaHash6 = string;
+export type SchemaVersion11 = "1.0";
+export type SourceGroupId = string;
+export type TaskId4 = string;
 export type ByteSize = number;
 export type ExifNormalized = boolean;
 export type Format1 = "jpeg" | "png" | "webp" | "bmp" | "tiff";
 export type HeightPx1 = number;
 export type ImportedAt = string;
-export type MediaHash4 = string;
-export type SchemaVersion8 = "1.0";
+export type MediaHash7 = string;
+export type SchemaVersion12 = "1.0";
 export type Detail1 = string;
 export type Kind4 = "file" | "folder" | "clipboard" | "video_frame" | "pdf_page" | "camera" | "screen" | "url";
 export type WidthPx1 = number;
@@ -195,7 +228,7 @@ export type PromptableBy = [
 export type ProviderId2 = string;
 export type Reproducible = boolean;
 export type Role = "teacher" | "student";
-export type SchemaVersion9 = "1.0";
+export type SchemaVersion13 = "1.0";
 /**
  * @minItems 1
  */
@@ -214,16 +247,42 @@ export type EventId = string;
 export type ReviewStatus1 =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
 export type LabelRef1 = string | null;
-export type SchemaVersion10 = "1.0";
+export type SchemaVersion14 = "1.0";
 export type ReviewStatus2 =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
-export type CreatedAt3 = string;
+export type CreatedAt5 = string;
+export type Kind5 = "detect";
+export type Name = string;
+export type SchemaVersion15 = "1.0";
+export type TaskId5 = string;
+export type CreatedAt6 = string;
 export type NodeId = string;
 export type RawText1 = string;
-export type SchemaVersion11 = "1.0";
+export type SchemaVersion16 = "1.0";
 
 export interface VisionForgeContracts {
   [k: string]: unknown;
+}
+/**
+ * 標註的不可變修訂；刪除是 retracted revision，不抹去舊資料。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "AnnotationRevision".
+ */
+export interface AnnotationRevision {
+  annotation_id: AnnotationId;
+  bbox: BBox | null;
+  concept_id: ConceptId;
+  created_at: CreatedAt;
+  created_by: CreatedBy;
+  media_hash: MediaHash;
+  replaces_revision_id?: ReplacesRevisionId;
+  revision_id: RevisionId;
+  schema_version?: SchemaVersion;
+  source: AnnotationSource;
+  source_claim_ref?: SourceClaimRef;
+  status?: Status;
+  task_id: TaskId;
 }
 /**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
@@ -264,13 +323,13 @@ export interface MappingPoint {
 export interface CalibrationSnapshot {
   calibration_id: CalibrationId;
   classes?: Classes;
-  created_at: CreatedAt;
+  created_at: CreatedAt1;
   global_threshold: GlobalThreshold;
   golden_manifest_ref: GoldenManifestRef;
   method?: Method;
   precision_target: PrecisionTarget;
   prior_strength: PriorStrength;
-  schema_version?: SchemaVersion;
+  schema_version?: SchemaVersion1;
 }
 /**
  * 逐類校準結果。none 級不輸出映射、退回保守全域門檻（R2 9.2）。
@@ -417,6 +476,31 @@ export interface Review {
   status?: ReviewStatus;
 }
 /**
+ * 把舊 Claim 的 provider 原話，可靠地綁回本次 Task/Concept。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "ClaimTeachingContext".
+ */
+export interface ClaimTeachingContext {
+  claim_id: ClaimId1;
+  concept_id: ConceptId1;
+  task_id: TaskId1;
+}
+/**
+ * 概念身分只在所屬 Task 內有意義，不再使用全專案隱式類別表。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "ConceptDefinition".
+ */
+export interface ConceptDefinition {
+  aliases?: Aliases;
+  concept_id: ConceptId2;
+  created_at: CreatedAt2;
+  display_name: DisplayName;
+  schema_version?: SchemaVersion2;
+  task_id: TaskId2;
+}
+/**
  * 誰產生了這筆消耗——Provider 或人（C5：人工有價）。
  *
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
@@ -441,7 +525,7 @@ export interface CostEntry {
   estimate_ref?: EstimateRef;
   measurements: Measurements;
   phase: Phase;
-  schema_version?: SchemaVersion1;
+  schema_version?: SchemaVersion3;
   subject: InputRef;
 }
 /**
@@ -467,6 +551,21 @@ export interface InputRef {
   kind: Kind2;
 }
 /**
+ * 一張圖對一個 Concept 的查核狀態；absence 的唯一權威來源。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "CoverageRecord".
+ */
+export interface CoverageRecord {
+  concept_id: ConceptId3;
+  media_hash: MediaHash1;
+  reviewer?: Reviewer1;
+  schema_version?: SchemaVersion4;
+  state?: CoverageState;
+  task_id: TaskId3;
+  verified_at?: VerifiedAt;
+}
+/**
  * 一個 Dataset 版本 = 一份清單，不是一份拷貝。回滾 = 以任一舊版為 parent
  * 開新版；歷史版本永不修改、永不刪除（D5）。黃金集項目不得出現在此（D8）。
  *
@@ -474,13 +573,13 @@ export interface InputRef {
  * via the `definition` "DatasetVersionManifest".
  */
 export interface DatasetVersionManifest {
-  created_at: CreatedAt1;
+  created_at: CreatedAt3;
   entries: Entries;
   gate_decision_ref?: GateDecisionRef;
   note?: Note;
   parent_ref?: ParentRef;
   provenance: ProvenanceSummary;
-  schema_version?: SchemaVersion2;
+  schema_version?: SchemaVersion5;
   version_id: VersionId;
   version_number: VersionNumber;
 }
@@ -490,7 +589,7 @@ export interface DatasetVersionManifest {
  */
 export interface ManifestEntry {
   label_refs?: LabelRefs;
-  media_hash: MediaHash;
+  media_hash: MediaHash2;
   split: Split;
 }
 /**
@@ -524,8 +623,8 @@ export interface DecisionOutcome {
   detail?: Detail;
   outcome_id: OutcomeId;
   produced_refs?: ProducedRefs;
-  schema_version?: SchemaVersion3;
-  status: Status;
+  schema_version?: SchemaVersion6;
+  status: Status1;
 }
 /**
  * Orchestrator 的不可變決策記錄。五不變量（憲法 §4.4）：
@@ -546,7 +645,7 @@ export interface DecisionRecord {
   kind: Kind3;
   overrides_ref?: OverridesRef;
   policy: PolicyRef;
-  schema_version?: SchemaVersion4;
+  schema_version?: SchemaVersion7;
 }
 /**
  * 生效政策的快照參照——重放時必須能指認當時的政策（D3）。
@@ -569,10 +668,10 @@ export interface GoldenSetEntry {
   added_by: AddedBy;
   entry_id: EntryId;
   label_ref: LabelRef;
-  media_hash: MediaHash1;
+  media_hash: MediaHash3;
   retired_reason?: RetiredReason;
-  schema_version?: SchemaVersion5;
-  status?: Status1;
+  schema_version?: SchemaVersion8;
+  status?: Status2;
 }
 /**
  * 一次 Provider 調用的批次紀錄。出處與成本記在 Run，審核以 Claim 為單位。
@@ -583,12 +682,12 @@ export interface GoldenSetEntry {
 export interface InferenceRun {
   claims?: Claims;
   cost_ref: CostRef;
-  created_at: CreatedAt2;
+  created_at: CreatedAt4;
   decision_ref: DecisionRef1;
   duration_ms: DurationMs;
   producer: Producer;
   run_id: RunId;
-  schema_version?: SchemaVersion6;
+  schema_version?: SchemaVersion9;
   subject: MediaSubject;
   task: Task;
 }
@@ -612,7 +711,7 @@ export interface Producer {
  */
 export interface MediaSubject {
   height_px: HeightPx;
-  media_hash: MediaHash2;
+  media_hash: MediaHash4;
   width_px: WidthPx;
 }
 /**
@@ -630,12 +729,23 @@ export interface Label {
   final_concept: Concept;
   final_geometry: FinalGeometry;
   label_id: LabelId;
-  media_hash: MediaHash3;
+  media_hash: MediaHash5;
   reviewed_at: ReviewedAt1;
-  reviewer: Reviewer1;
+  reviewer: Reviewer2;
   run_ref: RunRef;
-  schema_version?: SchemaVersion7;
+  schema_version?: SchemaVersion10;
   source_status: SourceStatus;
+}
+/**
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "MediaAssignment".
+ */
+export interface MediaAssignment {
+  assigned_at: AssignedAt;
+  media_hash: MediaHash6;
+  schema_version?: SchemaVersion11;
+  source_group_id: SourceGroupId;
+  task_id: TaskId4;
 }
 /**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
@@ -647,8 +757,8 @@ export interface MediaRecord {
   format: Format1;
   height_px: HeightPx1;
   imported_at: ImportedAt;
-  media_hash: MediaHash4;
-  schema_version?: SchemaVersion8;
+  media_hash: MediaHash7;
+  schema_version?: SchemaVersion12;
   source: MediaSource;
   width_px: WidthPx1;
 }
@@ -675,7 +785,7 @@ export interface ProviderCapability {
   provider_id: ProviderId2;
   reproducible: Reproducible;
   role: Role;
-  schema_version?: SchemaVersion9;
+  schema_version?: SchemaVersion13;
   tasks: Tasks;
   trainable: Trainable;
   version: Version1;
@@ -707,8 +817,19 @@ export interface ReviewEvent {
   event_id: EventId;
   from_status: ReviewStatus1;
   label_ref?: LabelRef1;
-  schema_version?: SchemaVersion10;
+  schema_version?: SchemaVersion14;
   to_status: ReviewStatus2;
+}
+/**
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "TaskRecord".
+ */
+export interface TaskRecord {
+  created_at: CreatedAt5;
+  kind?: Kind5;
+  name: Name;
+  schema_version?: SchemaVersion15;
+  task_id: TaskId5;
 }
 /**
  * 專案 Taxonomy 的一個節點；概念的權威身分。
@@ -717,8 +838,8 @@ export interface ReviewEvent {
  * via the `definition` "TaxonomyNode".
  */
 export interface TaxonomyNode {
-  created_at: CreatedAt3;
+  created_at: CreatedAt6;
   node_id: NodeId;
   raw_text: RawText1;
-  schema_version?: SchemaVersion11;
+  schema_version?: SchemaVersion16;
 }

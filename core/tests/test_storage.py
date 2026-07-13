@@ -1,5 +1,6 @@
 """儲存層測試（ADR-0005）：專案生命週期、去重、append-only、交易原子性。"""
 
+import sqlite3
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -121,6 +122,35 @@ def test_schema_too_new_refused(tmp_path):
     proj.close()
     with pytest.raises(ProjectSchemaTooNewError):
         open_project(root)
+
+
+def test_v3_project_migrates_additively_to_teaching_schema(tmp_path):
+    """既有專案重開時只新增 R3 資料表，不要求使用者重建專案。"""
+    root = tmp_path / "legacy-v3"
+    project = create_project(root, "舊專案", ulid(1))
+    project.close()
+    conn = sqlite3.connect(root / "project.db")
+    for table in (
+        "claim_teaching_context",
+        "annotation_revisions",
+        "coverage",
+        "media_assignments",
+        "concepts",
+        "tasks",
+    ):
+        conn.execute(f"DROP TABLE {table}")
+    conn.execute("DELETE FROM schema_migrations WHERE version = 4")
+    conn.commit()
+    conn.close()
+
+    reopened = open_project(root)
+    try:
+        assert reopened.tasks.list() == []
+        assert reopened.db.query_one(
+            "SELECT 1 FROM schema_migrations WHERE version = 4"
+        ) is not None
+    finally:
+        reopened.close()
 
 
 # ---- Blob 庫 ----

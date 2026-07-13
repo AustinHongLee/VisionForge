@@ -191,6 +191,114 @@ def test_process_unknown_media_returns_404(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_first_forge_teach_edit_verify_and_absent_flow(client: TestClient) -> None:
+    imported = _import_image(client)
+    task = client.post("/tasks", json={"name": "閥件偵測"}).json()
+    concept = client.post(
+        f"/tasks/{task['task_id']}/concepts",
+        json={"display_name": "Gate Valve", "aliases": ["gate valve"]},
+    ).json()
+
+    taught = client.post(
+        f"/tasks/{task['task_id']}/teach",
+        json={
+            "media_hash": imported["media_hash"],
+            "concept_ids": [concept["concept_id"]],
+            "source_group_id": "iso-sheet-001",
+        },
+    )
+    assert taught.status_code == 200
+    claim = taught.json()["claims"][0]
+    assert claim["concept"]["raw_text"] == "Gate Valve"
+
+    state = client.get(
+        f"/tasks/{task['task_id']}/media/{imported['media_hash']}/teaching"
+    ).json()
+    assert state["assignment"]["source_group_id"] == "iso-sheet-001"
+    assert state["coverage"][0]["state"] == "unverified"
+    assert state["teacher_claims"][0]["claim_id"] == claim["claim_id"]
+
+    accepted = client.post(
+        "/annotations",
+        json={
+            "task_id": task["task_id"],
+            "media_hash": imported["media_hash"],
+            "concept_id": concept["concept_id"],
+            "source_claim_ref": claim["claim_id"],
+        },
+    )
+    assert accepted.status_code == 200
+    annotation = accepted.json()
+    assert annotation["source"] == "teacher_accepted"
+
+    edited_bbox = {
+        "type": "bbox",
+        "x1": 0.2,
+        "y1": 0.2,
+        "x2": 0.6,
+        "y2": 0.7,
+    }
+    edited = client.patch(
+        f"/annotations/{annotation['annotation_id']}",
+        json={"concept_id": concept["concept_id"], "bbox": edited_bbox},
+    )
+    assert edited.status_code == 200
+    assert edited.json()["source"] == "teacher_edited"
+    assert edited.json()["replaces_revision_id"] == annotation["revision_id"]
+
+    complete = client.put(
+        "/coverage",
+        json={
+            "task_id": task["task_id"],
+            "media_hash": imported["media_hash"],
+            "concept_id": concept["concept_id"],
+            "state": "verified_complete",
+        },
+    )
+    assert complete.status_code == 200
+    assert complete.json()["reviewer"] == "local-user"
+
+    removed = client.delete(f"/annotations/{annotation['annotation_id']}")
+    assert removed.status_code == 200
+    assert removed.json()["status"] == "retracted"
+    absent = client.put(
+        "/coverage",
+        json={
+            "task_id": task["task_id"],
+            "media_hash": imported["media_hash"],
+            "concept_id": concept["concept_id"],
+            "state": "verified_absent",
+        },
+    )
+    assert absent.status_code == 200
+    assert absent.json()["state"] == "verified_absent"
+
+
+def test_complete_coverage_rejects_empty_annotations(client: TestClient) -> None:
+    imported = _import_image(client)
+    task = client.post("/tasks", json={"name": "物件偵測"}).json()
+    concept = client.post(
+        f"/tasks/{task['task_id']}/concepts", json={"display_name": "Valve"}
+    ).json()
+    assigned = client.post(
+        f"/tasks/{task['task_id']}/media/{imported['media_hash']}", json={}
+    )
+    assert assigned.status_code == 200
+
+    response = client.put(
+        "/coverage",
+        json={
+            "task_id": task["task_id"],
+            "media_hash": imported["media_hash"],
+            "concept_id": concept["concept_id"],
+            "state": "verified_complete",
+        },
+    )
+
+    assert response.status_code == 409
+    assert "沒有有效標註" in response.json()["detail"]["error"]
+
+
 def _process_image(client: TestClient, concepts: list[str] | None = None) -> dict:
     imported = _import_image(client)
     response = client.post(

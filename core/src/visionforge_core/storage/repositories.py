@@ -11,17 +11,23 @@ import json
 import sqlite3
 
 from visionforge_core.contracts import (
+    AnnotationRevision,
     CalibrationSnapshot,
     Claim,
+    ClaimTeachingContext,
+    ConceptDefinition,
     CostEntry,
+    CoverageRecord,
     DatasetVersionManifest,
     DecisionOutcome,
     DecisionRecord,
     GoldenSetEntry,
     InferenceRun,
     Label,
+    MediaAssignment,
     MediaRecord,
     ReviewEvent,
+    TaskRecord,
     TaxonomyNode,
 )
 from visionforge_core.storage.database import Database
@@ -70,6 +76,243 @@ class MediaRepository:
             (limit, offset),
         )
         return [MediaRecord.model_validate_json(row["json"]) for row in rows]
+
+
+class TaskRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def add(self, task: TaskRecord) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO tasks(task_id, name, created_at, json) VALUES(?, ?, ?, ?)",
+            (task.task_id, task.name, task.created_at.isoformat(), task.model_dump_json()),
+            f"task {task.name}",
+        )
+
+    def get(self, task_id: str) -> TaskRecord:
+        row = self._db.query_one("SELECT json FROM tasks WHERE task_id = ?", (task_id,))
+        if row is None:
+            raise NotFoundError(f"task {task_id} 不存在")
+        return TaskRecord.model_validate_json(row["json"])
+
+    def list(self) -> list[TaskRecord]:
+        rows = self._db.query_all("SELECT json FROM tasks ORDER BY created_at, task_id")
+        return [TaskRecord.model_validate_json(row["json"]) for row in rows]
+
+
+class ConceptRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def add(self, concept: ConceptDefinition) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO concepts(concept_id, task_id, display_name, created_at, json)"
+            " VALUES(?, ?, ?, ?, ?)",
+            (
+                concept.concept_id,
+                concept.task_id,
+                concept.display_name,
+                concept.created_at.isoformat(),
+                concept.model_dump_json(),
+            ),
+            f"concept {concept.task_id}/{concept.display_name}",
+        )
+
+    def get(self, concept_id: str) -> ConceptDefinition:
+        row = self._db.query_one(
+            "SELECT json FROM concepts WHERE concept_id = ?", (concept_id,)
+        )
+        if row is None:
+            raise NotFoundError(f"concept {concept_id} 不存在")
+        return ConceptDefinition.model_validate_json(row["json"])
+
+    def list_by_task(self, task_id: str) -> list[ConceptDefinition]:
+        rows = self._db.query_all(
+            "SELECT json FROM concepts WHERE task_id = ? ORDER BY created_at, concept_id",
+            (task_id,),
+        )
+        return [ConceptDefinition.model_validate_json(row["json"]) for row in rows]
+
+
+class MediaAssignmentRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def add(self, assignment: MediaAssignment) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO media_assignments(task_id, media_hash, source_group_id, assigned_at, json)"
+            " VALUES(?, ?, ?, ?, ?)",
+            (
+                assignment.task_id,
+                assignment.media_hash,
+                assignment.source_group_id,
+                assignment.assigned_at.isoformat(),
+                assignment.model_dump_json(),
+            ),
+            f"assignment {assignment.task_id}/{assignment.media_hash[:12]}",
+        )
+
+    def get(self, task_id: str, media_hash: str) -> MediaAssignment | None:
+        row = self._db.query_one(
+            "SELECT json FROM media_assignments WHERE task_id = ? AND media_hash = ?",
+            (task_id, media_hash),
+        )
+        return MediaAssignment.model_validate_json(row["json"]) if row else None
+
+    def list_by_task(self, task_id: str) -> list[MediaAssignment]:
+        rows = self._db.query_all(
+            "SELECT json FROM media_assignments WHERE task_id = ?"
+            " ORDER BY assigned_at, media_hash",
+            (task_id,),
+        )
+        return [MediaAssignment.model_validate_json(row["json"]) for row in rows]
+
+
+class CoverageRepository:
+    """Coverage 是目前查核狀態；不可變 DatasetVersion 會保存每次訓練所見快照。"""
+
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def set(self, coverage: CoverageRecord) -> None:
+        self._db.execute(
+            "INSERT INTO coverage(task_id, media_hash, concept_id, state, json)"
+            " VALUES(?, ?, ?, ?, ?)"
+            " ON CONFLICT(task_id, media_hash, concept_id) DO UPDATE SET"
+            " state = excluded.state, json = excluded.json",
+            (
+                coverage.task_id,
+                coverage.media_hash,
+                coverage.concept_id,
+                coverage.state.value,
+                coverage.model_dump_json(),
+            ),
+        )
+
+    def get(self, task_id: str, media_hash: str, concept_id: str) -> CoverageRecord | None:
+        row = self._db.query_one(
+            "SELECT json FROM coverage WHERE task_id = ? AND media_hash = ? AND concept_id = ?",
+            (task_id, media_hash, concept_id),
+        )
+        return CoverageRecord.model_validate_json(row["json"]) if row else None
+
+    def list_by_media(self, task_id: str, media_hash: str) -> list[CoverageRecord]:
+        rows = self._db.query_all(
+            "SELECT json FROM coverage WHERE task_id = ? AND media_hash = ?"
+            " ORDER BY concept_id",
+            (task_id, media_hash),
+        )
+        return [CoverageRecord.model_validate_json(row["json"]) for row in rows]
+
+
+class AnnotationRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def append(self, revision: AnnotationRevision) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO annotation_revisions(revision_id, annotation_id, task_id, media_hash,"
+            " concept_id, created_at, status, json) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                revision.revision_id,
+                revision.annotation_id,
+                revision.task_id,
+                revision.media_hash,
+                revision.concept_id,
+                revision.created_at.isoformat(),
+                revision.status,
+                revision.model_dump_json(),
+            ),
+            f"annotation revision {revision.revision_id}",
+        )
+
+    def get_revision(self, revision_id: str) -> AnnotationRevision:
+        row = self._db.query_one(
+            "SELECT json FROM annotation_revisions WHERE revision_id = ?", (revision_id,)
+        )
+        if row is None:
+            raise NotFoundError(f"annotation revision {revision_id} 不存在")
+        return AnnotationRevision.model_validate_json(row["json"])
+
+    def latest(self, annotation_id: str) -> AnnotationRevision:
+        row = self._db.query_one(
+            "SELECT json FROM annotation_revisions WHERE annotation_id = ?"
+            " ORDER BY created_at DESC, revision_id DESC LIMIT 1",
+            (annotation_id,),
+        )
+        if row is None:
+            raise NotFoundError(f"annotation {annotation_id} 不存在")
+        return AnnotationRevision.model_validate_json(row["json"])
+
+    def list_effective(
+        self,
+        task_id: str,
+        media_hash: str,
+        concept_id: str | None = None,
+    ) -> list[AnnotationRevision]:
+        sql = (
+            "SELECT json FROM annotation_revisions WHERE task_id = ? AND media_hash = ?"
+        )
+        params: tuple[str, ...] = (task_id, media_hash)
+        if concept_id is not None:
+            sql += " AND concept_id = ?"
+            params += (concept_id,)
+        sql += " ORDER BY created_at, revision_id"
+        rows = self._db.query_all(sql, params)
+        latest: dict[str, AnnotationRevision] = {}
+        for row in rows:
+            revision = AnnotationRevision.model_validate_json(row["json"])
+            latest[revision.annotation_id] = revision
+        return sorted(
+            (revision for revision in latest.values() if revision.status == "active"),
+            key=lambda revision: revision.annotation_id,
+        )
+
+
+class ClaimTeachingContextRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def add(self, context: ClaimTeachingContext) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO claim_teaching_context(claim_id, task_id, concept_id, json)"
+            " VALUES(?, ?, ?, ?)",
+            (context.claim_id, context.task_id, context.concept_id, context.model_dump_json()),
+            f"claim teaching context {context.claim_id}",
+        )
+
+    def get(self, claim_id: str) -> ClaimTeachingContext:
+        row = self._db.query_one(
+            "SELECT json FROM claim_teaching_context WHERE claim_id = ?", (claim_id,)
+        )
+        if row is None:
+            raise NotFoundError(f"claim teaching context {claim_id} 不存在")
+        return ClaimTeachingContext.model_validate_json(row["json"])
+
+    def latest_claims(self, task_id: str, media_hash: str) -> list[Claim]:
+        """取得此教學範圍最近一次 Run 的教師建議。"""
+        latest = self._db.query_one(
+            "SELECT c.run_id FROM claim_teaching_context x"
+            " JOIN claims c ON c.claim_id = x.claim_id"
+            " JOIN runs r ON r.run_id = c.run_id"
+            " WHERE x.task_id = ? AND c.media_hash = ?"
+            " ORDER BY r.created_at DESC, r.run_id DESC LIMIT 1",
+            (task_id, media_hash),
+        )
+        if latest is None:
+            return []
+        rows = self._db.query_all(
+            "SELECT c.json FROM claims c JOIN claim_teaching_context x"
+            " ON x.claim_id = c.claim_id WHERE c.run_id = ? AND x.task_id = ?"
+            " ORDER BY c.claim_id",
+            (latest["run_id"], task_id),
+        )
+        return [Claim.model_validate_json(row["json"]) for row in rows]
 
 
 class RunRepository:
