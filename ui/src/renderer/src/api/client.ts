@@ -33,8 +33,6 @@ export interface PendingItem {
 
 export interface ReviewDecisionInput {
   claim_id: string;
-  run_ref: string;
-  media_hash: string;
   reviewer: string;
 }
 

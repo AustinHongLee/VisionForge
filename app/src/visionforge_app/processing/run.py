@@ -51,6 +51,17 @@ def _params_hash(*, concepts: Sequence[Concept], task: str, provider_id: str, ve
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _claim_id_for_run(run_id: str, index: int) -> str:
+    """Provider 的 draft ID 不是全域身分；持久化 ID 由服務層以 Run scope 配置。"""
+    digest = hashlib.sha256(f"{run_id}\0{index}".encode("ascii")).digest()
+    value = int.from_bytes(digest[:16], "big")
+    chars: list[str] = []
+    for _ in range(26):
+        chars.append(_CROCKFORD32[value & 0b11111])
+        value >>= 5
+    return "".join(reversed(chars))
+
+
 def apply_latest_to_claims(project: Project, claims: Sequence[Claim]) -> tuple[Claim, ...]:
     """用最新校準快照回填 claims；無快照時 core 會原樣返回 confidence。"""
     return tuple(
@@ -95,6 +106,11 @@ def process_media(
     duration_ms = 0 if now is not None else max(0, int((time.perf_counter() - start) * 1000))
     effective_now = now or datetime.now(timezone.utc)
     next_id = id_factory or _new_ulid
+    run_id = next_id()
+    persisted_claims = tuple(
+        claim.model_copy(update={"claim_id": _claim_id_for_run(run_id, index)})
+        for index, claim in enumerate(calibrated_claims)
+    )
     producer = Producer(
         provider_id=capability.provider_id,
         provider_version=capability.version,
@@ -115,9 +131,9 @@ def process_media(
         subject=subject,
         producer=producer,
         task=task,
-        claims=calibrated_claims,
+        claims=persisted_claims,
         duration_ms=duration_ms,
-        run_id=next_id(),
+        run_id=run_id,
         decision_id=next_id(),
         cost_id=next_id(),
         outcome_id=next_id(),

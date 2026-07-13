@@ -246,9 +246,7 @@ describe("App", () => {
         expect(init?.method).toBe("POST");
         expect(JSON.parse(String(init?.body))).toEqual({
           claim_id: "00000000000000000000000001",
-          media_hash: mediaA.media_hash,
           reviewer: "local-user",
-          run_ref: "0000000000000000000000000A",
         });
         return jsonResponse({ label_id: "0000000000000000000000000B" });
       }
@@ -274,9 +272,7 @@ describe("App", () => {
         expect(init?.method).toBe("POST");
         expect(JSON.parse(String(init?.body))).toEqual({
           claim_id: "00000000000000000000000003",
-          media_hash: mediaA.media_hash,
           reviewer: "local-user",
-          run_ref: "0000000000000000000000000A",
         });
         return jsonResponse({ event_id: "0000000000000000000000000C", to_status: "rejected" });
       }

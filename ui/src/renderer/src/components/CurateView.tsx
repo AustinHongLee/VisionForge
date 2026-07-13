@@ -27,9 +27,7 @@ const groupPending = (items: PendingItem[]): Map<string, PendingItem[]> => {
 
 const decisionBody = (item: PendingItem) => ({
   claim_id: item.claim.claim_id,
-  media_hash: item.media_hash,
   reviewer: REVIEWER,
-  run_ref: item.run_ref,
 });
 
 const CurateView = (): React.JSX.Element => {

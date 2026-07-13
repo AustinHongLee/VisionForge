@@ -10,6 +10,7 @@ from PIL import Image
 from visionforge_app.api import create_app
 from visionforge_core.contracts import Claim
 from visionforge_core.storage import create_project
+from visionforge_providers import FixtureProvider
 
 
 @pytest.fixture()
@@ -23,7 +24,7 @@ def project(tmp_path: Path):
 
 @pytest.fixture()
 def client(project) -> TestClient:
-    return TestClient(create_app(project))
+    return TestClient(create_app(project, FixtureProvider()))
 
 
 def _jpeg_bytes(size: tuple[int, int] = (16, 10)) -> bytes:
@@ -226,8 +227,6 @@ def test_review_approve_returns_label_and_removes_pending_claim(
         "/review/approve",
         json={
             "claim_id": pending["claim"]["claim_id"],
-            "run_ref": pending["run_ref"],
-            "media_hash": pending["media_hash"],
             "reviewer": "alice",
         },
     )
@@ -249,8 +248,6 @@ def test_review_approve_with_geometry_edit_marks_edited(client: TestClient) -> N
         "/review/approve",
         json={
             "claim_id": pending["claim"]["claim_id"],
-            "run_ref": pending["run_ref"],
-            "media_hash": pending["media_hash"],
             "reviewer": "alice",
             "final_geometry": {"type": "bbox", "x1": 0.2, "y1": 0.2, "x2": 0.9, "y2": 0.9},
         },
@@ -270,8 +267,6 @@ def test_review_reject_removes_pending_without_label(client: TestClient, project
         "/review/reject",
         json={
             "claim_id": pending["claim"]["claim_id"],
-            "run_ref": pending["run_ref"],
-            "media_hash": pending["media_hash"],
             "reviewer": "alice",
         },
     )
@@ -284,6 +279,19 @@ def test_review_reject_removes_pending_without_label(client: TestClient, project
     assert project.labels.iter_by_media(pending["media_hash"]) == []
 
 
+def test_review_repeating_terminal_decision_returns_409(client: TestClient) -> None:
+    _process_image(client)
+    pending = client.get("/review/pending").json()[0]
+    payload = {"claim_id": pending["claim"]["claim_id"], "reviewer": "alice"}
+
+    first = client.post("/review/approve", json=payload)
+    repeated = client.post("/review/reject", json=payload)
+
+    assert first.status_code == 200
+    assert repeated.status_code == 409
+    assert repeated.json()["detail"]["error"] == "review_conflict"
+
+
 def test_golden_endpoint_registers_approved_label(client: TestClient) -> None:
     _process_image(client)
     pending = client.get("/review/pending").json()[0]
@@ -291,8 +299,6 @@ def test_golden_endpoint_registers_approved_label(client: TestClient) -> None:
         "/review/approve",
         json={
             "claim_id": pending["claim"]["claim_id"],
-            "run_ref": pending["run_ref"],
-            "media_hash": pending["media_hash"],
             "reviewer": "alice",
         },
     ).json()
@@ -331,8 +337,6 @@ def test_recalibrate_updates_infer_confidence(client: TestClient) -> None:
             "/review/approve",
             json={
                 "claim_id": item["claim"]["claim_id"],
-                "run_ref": item["run_ref"],
-                "media_hash": item["media_hash"],
                 "reviewer": "alice",
             },
         )
@@ -359,8 +363,6 @@ def test_review_and_golden_unknown_ids_return_404(client: TestClient) -> None:
         "/review/approve",
         json={
             "claim_id": "0000000000000000000000000A",
-            "run_ref": "0000000000000000000000000B",
-            "media_hash": "f" * 64,
             "reviewer": "alice",
         },
     )

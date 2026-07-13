@@ -124,6 +124,7 @@ class Database:
 
     def __init__(self, conn: sqlite3.Connection) -> None:
         self._conn = conn
+        self._savepoint_counter = 0
 
     @classmethod
     def open(cls, db_path: Path) -> Database:
@@ -142,6 +143,19 @@ class Database:
     @contextmanager
     def transaction(self) -> Iterator[None]:
         """明確交易：整批成功或整批不存在（D5 版本化交易的基座）。"""
+        if self._conn.in_transaction:
+            self._savepoint_counter += 1
+            name = f"visionforge_sp_{self._savepoint_counter}"
+            self._conn.execute(f"SAVEPOINT {name}")
+            try:
+                yield
+            except BaseException:
+                self._conn.execute(f"ROLLBACK TO {name}")
+                self._conn.execute(f"RELEASE {name}")
+                raise
+            self._conn.execute(f"RELEASE {name}")
+            return
+
         self._conn.execute("BEGIN IMMEDIATE")
         try:
             yield

@@ -86,7 +86,8 @@ if exist "provider-config.json" (
   echo     provider config: !VISIONFORGE_PROVIDER_CONFIG!
 ) else (
   set "VISIONFORGE_PROVIDER_CONFIG="
-  echo     provider config: not found; fixture provider will be used
+  set "VISIONFORGE_DEV_FIXTURE=1"
+  echo     provider config: not found; Developer Mode fixture explicitly enabled
 )
 
 echo [6/8] Checking provider-config safety...

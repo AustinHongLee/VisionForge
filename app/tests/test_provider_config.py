@@ -8,7 +8,11 @@ import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 from visionforge_app.api import create_app
-from visionforge_app.provider_config import load_provider
+from visionforge_app.provider_config import (
+    ENV_DEVELOPER_FIXTURE,
+    ProviderConfigurationError,
+    load_provider,
+)
 from visionforge_core.contracts import BBox, Claim, Concept, Confidence, ProviderCapability
 from visionforge_core.providers import InferenceRequest, InferenceResult
 from visionforge_core.storage import create_project
@@ -30,7 +34,14 @@ def _jpeg_bytes() -> bytes:
     return output.getvalue()
 
 
-def test_load_provider_defaults_to_fixture_when_config_is_missing(project) -> None:
+def test_load_provider_missing_config_is_explicit_error(project) -> None:
+    with pytest.raises(ProviderConfigurationError, match="未設定 Teacher"):
+        load_provider(project)
+
+
+def test_load_provider_developer_mode_explicitly_enables_fixture(project, monkeypatch) -> None:
+    monkeypatch.setenv(ENV_DEVELOPER_FIXTURE, "1")
+
     provider = load_provider(project)
 
     assert isinstance(provider, FixtureProvider)
@@ -61,12 +72,27 @@ def test_load_provider_uses_openai_when_config_has_key(project) -> None:
     assert provider.capability.version == "gpt-5-mini"
 
 
-def test_load_provider_invalid_json_falls_back_to_fixture(project) -> None:
+def test_load_provider_invalid_json_is_explicit_error(project) -> None:
     (project.root / "provider-config.json").write_text("{bad json", encoding="utf-8")
 
-    provider = load_provider(project)
+    with pytest.raises(ProviderConfigurationError, match="Teacher 設定無效"):
+        load_provider(project)
 
-    assert isinstance(provider, FixtureProvider)
+
+def test_api_missing_provider_returns_503_instead_of_fake_boxes(project) -> None:
+    client = TestClient(create_app(project))
+    imported = client.post(
+        "/import",
+        files={"file": ("sample.jpg", _jpeg_bytes(), "image/jpeg")},
+    )
+
+    response = client.post(
+        "/infer",
+        json={"media_hash": imported.json()["media_hash"], "concepts": [{"raw_text": "bolt"}]},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["error"] == "provider_not_configured"
 
 
 class SingleClaimProvider:

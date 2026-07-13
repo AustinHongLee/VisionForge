@@ -27,7 +27,7 @@ from visionforge_core.contracts.claims import Geometry
 from visionforge_core.providers import InferenceRequest, VisionProvider
 from visionforge_core.review import ClaimForReview, approve, list_pending, reject
 from visionforge_core.storage import Project, open_project
-from visionforge_core.storage.errors import NotFoundError
+from visionforge_core.storage.errors import ConflictError, NotFoundError
 from visionforge_providers import OpenAIProviderError
 
 from visionforge_app.export import ExportOutcome, export_dataset
@@ -35,7 +35,7 @@ from visionforge_app.importer import import_media
 from visionforge_app.importer.errors import MediaImportError
 from visionforge_app.processing import UnknownMediaError, process_media
 from visionforge_app.processing.run import apply_latest_to_claims
-from visionforge_app.provider_config import load_provider
+from visionforge_app.provider_config import ProviderConfigurationError, load_provider
 from visionforge_app.query import MediaPage, list_media, thumbnail_path
 
 
@@ -79,8 +79,6 @@ class PendingReviewItem(BaseModel):
 
 class ApproveRequest(BaseModel):
     claim_id: str
-    run_ref: str
-    media_hash: str
     reviewer: str = Field(min_length=1, max_length=256)
     final_geometry: Geometry | None = None
     final_concept_raw_text: str | None = Field(default=None, min_length=1, max_length=512)
@@ -88,8 +86,6 @@ class ApproveRequest(BaseModel):
 
 class RejectRequest(BaseModel):
     claim_id: str
-    run_ref: str
-    media_hash: str
     reviewer: str = Field(min_length=1, max_length=256)
 
 
@@ -134,9 +130,9 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _claim_item(project: Project, claim_id: str, run_ref: str, media_hash: str) -> ClaimForReview:
+def _claim_item(project: Project, claim_id: str) -> ClaimForReview:
     try:
-        claim = project.runs.get_claim(claim_id)
+        claim, run_ref, media_hash = project.runs.get_claim_context(claim_id)
     except NotFoundError as exc:
         raise HTTPException(status_code=404, detail={"error": "claim_not_found"}) from exc
     return ClaimForReview(claim=claim, run_ref=run_ref, media_hash=media_hash)
@@ -146,6 +142,20 @@ def _provider_unavailable(exc: OpenAIProviderError) -> HTTPException:
     return HTTPException(
         status_code=502,
         detail={"error": "provider_unavailable", "message": str(exc)},
+    )
+
+
+def _provider_not_configured(exc: ProviderConfigurationError) -> HTTPException:
+    return HTTPException(
+        status_code=503,
+        detail={"error": "provider_not_configured", "message": str(exc)},
+    )
+
+
+def _review_conflict(exc: ConflictError) -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={"error": "review_conflict", "message": str(exc)},
     )
 
 
@@ -213,7 +223,10 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
             if blob is None:
                 raise HTTPException(status_code=404, detail={"error": "media_not_found"})
             data = blob.read_bytes()
-            active_provider = provider_override or load_provider(current)
+            try:
+                active_provider = provider_override or load_provider(current)
+            except ProviderConfigurationError as exc:
+                raise _provider_not_configured(exc) from exc
             try:
                 result = active_provider.infer(
                     data,
@@ -238,6 +251,8 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
             raise HTTPException(status_code=404, detail={"error": "media_not_found"}) from exc
         except OpenAIProviderError as exc:
             raise _provider_unavailable(exc) from exc
+        except ProviderConfigurationError as exc:
+            raise _provider_not_configured(exc) from exc
         run = outcome.run
         return ProcessResponse(
             run_id=run.run_id,
@@ -260,32 +275,38 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
 
     @app.post("/review/approve", response_model=Label)
     def review_approve(request: ApproveRequest) -> Label:
-        with request_project() as current:
-            item = _claim_item(current, request.claim_id, request.run_ref, request.media_hash)
-            return approve(
-                current,
-                item,
-                reviewer=request.reviewer,
-                reviewed_at=_utc_now(),
-                node_id=_new_ulid(),
-                label_id=_new_ulid(),
-                event_id=_new_ulid(),
-                final_geometry=request.final_geometry,
-                final_concept_raw_text=request.final_concept_raw_text,
-            )
+        try:
+            with request_project() as current:
+                item = _claim_item(current, request.claim_id)
+                return approve(
+                    current,
+                    item,
+                    reviewer=request.reviewer,
+                    reviewed_at=_utc_now(),
+                    node_id=_new_ulid(),
+                    label_id=_new_ulid(),
+                    event_id=_new_ulid(),
+                    final_geometry=request.final_geometry,
+                    final_concept_raw_text=request.final_concept_raw_text,
+                )
+        except ConflictError as exc:
+            raise _review_conflict(exc) from exc
 
     @app.post("/review/reject", response_model=RejectResponse)
     def review_reject(request: RejectRequest) -> RejectResponse:
-        with request_project() as current:
-            item = _claim_item(current, request.claim_id, request.run_ref, request.media_hash)
-            event = reject(
-                current,
-                item,
-                reviewer=request.reviewer,
-                reviewed_at=_utc_now(),
-                event_id=_new_ulid(),
-            )
-            return RejectResponse(event_id=event.event_id, to_status=event.to_status.value)
+        try:
+            with request_project() as current:
+                item = _claim_item(current, request.claim_id)
+                event = reject(
+                    current,
+                    item,
+                    reviewer=request.reviewer,
+                    reviewed_at=_utc_now(),
+                    event_id=_new_ulid(),
+                )
+                return RejectResponse(event_id=event.event_id, to_status=event.to_status.value)
+        except ConflictError as exc:
+            raise _review_conflict(exc) from exc
 
     @app.post("/golden", response_model=GoldenSetEntry)
     def golden(request: GoldenRequest) -> GoldenSetEntry:

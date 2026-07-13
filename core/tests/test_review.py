@@ -2,10 +2,11 @@
 
 from datetime import datetime, timezone
 
+import pytest
 from visionforge_core.contracts import BBox, Claim, Concept, Confidence, MediaSubject, Producer
 from visionforge_core.orchestrator import record_inference_run
-from visionforge_core.review import approve, list_pending, reject
-from visionforge_core.storage import create_project
+from visionforge_core.review import ClaimForReview, approve, list_pending, reject
+from visionforge_core.storage import ConflictError, create_project
 
 NOW = datetime(2026, 7, 8, 12, 0, 0, tzinfo=timezone.utc)
 
@@ -99,5 +100,61 @@ def test_reject_creates_event_without_label(tmp_path):
         assert event.label_ref is None
         assert proj.labels.iter_by_media(sha(1)) == []  # 否決不產 Label
         assert {p.claim.claim_id for p in list_pending(proj)} == {ulid(100)}
+    finally:
+        proj.close()
+
+
+def test_terminal_review_cannot_be_repeated(tmp_path):
+    proj = seed(tmp_path)
+    try:
+        item = next(p for p in list_pending(proj) if p.claim.claim_id == ulid(100))
+        approve(
+            proj, item, reviewer="alice", reviewed_at=NOW,
+            node_id=ulid(200), label_id=ulid(300), event_id=ulid(400),
+        )
+
+        with pytest.raises(ConflictError, match="已有終局審核結果"):
+            approve(
+                proj, item, reviewer="alice", reviewed_at=NOW,
+                node_id=ulid(201), label_id=ulid(301), event_id=ulid(401),
+            )
+
+        assert len(proj.labels.iter_by_media(sha(1))) == 1
+        assert len(proj.review_events.iter_by_claim(ulid(100))) == 1
+    finally:
+        proj.close()
+
+
+def test_review_rejects_forged_lineage(tmp_path):
+    proj = seed(tmp_path)
+    try:
+        original = next(p for p in list_pending(proj) if p.claim.claim_id == ulid(100))
+        forged = ClaimForReview(original.claim, ulid(999), sha(999))
+
+        with pytest.raises(ConflictError, match="關聯與持久化資料不一致"):
+            reject(proj, forged, reviewer="mallory", reviewed_at=NOW, event_id=ulid(401))
+
+        assert proj.review_events.iter_by_claim(ulid(100)) == []
+    finally:
+        proj.close()
+
+
+def test_approve_rolls_back_label_when_event_write_fails(tmp_path, monkeypatch):
+    proj = seed(tmp_path)
+
+    def fail_event(_event):
+        raise RuntimeError("injected event failure")
+
+    monkeypatch.setattr(proj.review_events, "append", fail_event)
+    try:
+        item = next(p for p in list_pending(proj) if p.claim.claim_id == ulid(100))
+        with pytest.raises(RuntimeError, match="injected event failure"):
+            approve(
+                proj, item, reviewer="alice", reviewed_at=NOW,
+                node_id=ulid(200), label_id=ulid(300), event_id=ulid(400),
+            )
+
+        assert proj.labels.iter_by_media(sha(1)) == []
+        assert proj.review_events.iter_by_claim(ulid(100)) == []
     finally:
         proj.close()

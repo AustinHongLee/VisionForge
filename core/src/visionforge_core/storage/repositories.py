@@ -121,6 +121,16 @@ class RunRepository:
             raise NotFoundError(f"claim {claim_id} 不存在")
         return Claim.model_validate_json(row["json"])
 
+    def get_claim_context(self, claim_id: str) -> tuple[Claim, str, str]:
+        """由持久化資料解析 Claim 的 run／media 關聯；不得信任 client 自行拼接。"""
+        row = self._db.query_one(
+            "SELECT json, run_id, media_hash FROM claims WHERE claim_id = ?",
+            (claim_id,),
+        )
+        if row is None:
+            raise NotFoundError(f"claim {claim_id} 不存在")
+        return Claim.model_validate_json(row["json"]), row["run_id"], row["media_hash"]
+
     def iter_claims_by_media(self, media_hash: str) -> list[Claim]:
         rows = self._db.query_all(
             "SELECT json FROM claims WHERE media_hash = ? ORDER BY claim_id", (media_hash,)
