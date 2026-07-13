@@ -18,17 +18,23 @@ from visionforge_core.contracts import (
     ConceptDefinition,
     CostEntry,
     CoverageRecord,
+    DatasetVersion,
     DatasetVersionManifest,
     DecisionOutcome,
     DecisionRecord,
+    EvaluationFeedback,
+    EvaluationReport,
     GoldenSetEntry,
     InferenceRun,
     Label,
     MediaAssignment,
     MediaRecord,
+    ModelArtifact,
     ReviewEvent,
     TaskRecord,
     TaxonomyNode,
+    TrainingRun,
+    TrainingRunEvent,
 )
 from visionforge_core.storage.database import Database
 from visionforge_core.storage.errors import ConflictError, NotFoundError
@@ -659,3 +665,240 @@ class CalibrationRepository:
             "SELECT json FROM calibrations ORDER BY created_at DESC, calibration_id DESC LIMIT 1"
         )
         return CalibrationSnapshot.model_validate_json(row["json"]) if row else None
+
+
+class DatasetVersionRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def append(self, version: DatasetVersion) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO teaching_dataset_versions(dataset_version_id, task_id, version_number,"
+            " created_at, json) VALUES(?, ?, ?, ?, ?)",
+            (
+                version.dataset_version_id,
+                version.task_id,
+                version.version_number,
+                version.created_at.isoformat(),
+                version.model_dump_json(),
+            ),
+            f"dataset version {version.task_id}/v{version.version_number}",
+        )
+
+    def get(self, dataset_version_id: str) -> DatasetVersion:
+        row = self._db.query_one(
+            "SELECT json FROM teaching_dataset_versions WHERE dataset_version_id = ?",
+            (dataset_version_id,),
+        )
+        if row is None:
+            raise NotFoundError(f"dataset version {dataset_version_id} 不存在")
+        return DatasetVersion.model_validate_json(row["json"])
+
+    def list_by_task(self, task_id: str) -> list[DatasetVersion]:
+        rows = self._db.query_all(
+            "SELECT json FROM teaching_dataset_versions WHERE task_id = ?"
+            " ORDER BY version_number",
+            (task_id,),
+        )
+        return [DatasetVersion.model_validate_json(row["json"]) for row in rows]
+
+    def latest(self, task_id: str) -> DatasetVersion | None:
+        row = self._db.query_one(
+            "SELECT json FROM teaching_dataset_versions WHERE task_id = ?"
+            " ORDER BY version_number DESC LIMIT 1",
+            (task_id,),
+        )
+        return DatasetVersion.model_validate_json(row["json"]) if row else None
+
+
+class TrainingRunRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def append(self, run: TrainingRun) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO training_runs(training_run_id, dataset_version_id, task_id, created_at,"
+            " json) VALUES(?, ?, ?, ?, ?)",
+            (
+                run.training_run_id,
+                run.dataset_version_id,
+                run.task_id,
+                run.created_at.isoformat(),
+                run.model_dump_json(),
+            ),
+            f"training run {run.training_run_id}",
+        )
+
+    def get(self, training_run_id: str) -> TrainingRun:
+        row = self._db.query_one(
+            "SELECT json FROM training_runs WHERE training_run_id = ?", (training_run_id,)
+        )
+        if row is None:
+            raise NotFoundError(f"training run {training_run_id} 不存在")
+        return TrainingRun.model_validate_json(row["json"])
+
+    def list_by_task(self, task_id: str) -> list[TrainingRun]:
+        rows = self._db.query_all(
+            "SELECT json FROM training_runs WHERE task_id = ? ORDER BY created_at, training_run_id",
+            (task_id,),
+        )
+        return [TrainingRun.model_validate_json(row["json"]) for row in rows]
+
+    def append_event(self, event: TrainingRunEvent) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO training_run_events(event_id, training_run_id, status, at, json)"
+            " VALUES(?, ?, ?, ?, ?)",
+            (
+                event.event_id,
+                event.training_run_id,
+                event.status,
+                event.at.isoformat(),
+                event.model_dump_json(),
+            ),
+            f"training event {event.event_id}",
+        )
+
+    def events(self, training_run_id: str) -> list[TrainingRunEvent]:
+        rows = self._db.query_all(
+            "SELECT json FROM training_run_events WHERE training_run_id = ?"
+            " ORDER BY at, event_id",
+            (training_run_id,),
+        )
+        return [TrainingRunEvent.model_validate_json(row["json"]) for row in rows]
+
+    def latest_event(self, training_run_id: str) -> TrainingRunEvent:
+        row = self._db.query_one(
+            "SELECT json FROM training_run_events WHERE training_run_id = ?"
+            " ORDER BY at DESC, event_id DESC LIMIT 1",
+            (training_run_id,),
+        )
+        if row is None:
+            raise NotFoundError(f"training run {training_run_id} 尚無狀態")
+        return TrainingRunEvent.model_validate_json(row["json"])
+
+    def list_with_status(self, status: str) -> list[TrainingRun]:
+        rows = self._db.query_all(
+            "SELECT r.json FROM training_runs r JOIN training_run_events e"
+            " ON e.training_run_id = r.training_run_id"
+            " WHERE e.status = ? AND e.event_id = ("
+            " SELECT e2.event_id FROM training_run_events e2"
+            " WHERE e2.training_run_id = r.training_run_id"
+            " ORDER BY e2.at DESC, e2.event_id DESC LIMIT 1)"
+            " ORDER BY r.created_at, r.training_run_id",
+            (status,),
+        )
+        return [TrainingRun.model_validate_json(row["json"]) for row in rows]
+
+
+class ModelArtifactRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def append(self, artifact: ModelArtifact) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO model_artifacts(artifact_id, artifact_hash, task_id, dataset_version_id,"
+            " training_run_id, created_at, json) VALUES(?, ?, ?, ?, ?, ?, ?)",
+            (
+                artifact.artifact_id,
+                artifact.artifact_hash,
+                artifact.task_id,
+                artifact.dataset_version_id,
+                artifact.training_run_id,
+                artifact.created_at.isoformat(),
+                artifact.model_dump_json(),
+            ),
+            f"model artifact {artifact.artifact_id}",
+        )
+
+    def get(self, artifact_id: str) -> ModelArtifact:
+        row = self._db.query_one(
+            "SELECT json FROM model_artifacts WHERE artifact_id = ?", (artifact_id,)
+        )
+        if row is None:
+            raise NotFoundError(f"model artifact {artifact_id} 不存在")
+        return ModelArtifact.model_validate_json(row["json"])
+
+    def list_by_task(self, task_id: str) -> list[ModelArtifact]:
+        rows = self._db.query_all(
+            "SELECT json FROM model_artifacts WHERE task_id = ? ORDER BY created_at, artifact_id",
+            (task_id,),
+        )
+        return [ModelArtifact.model_validate_json(row["json"]) for row in rows]
+
+    def by_run(self, training_run_id: str) -> ModelArtifact | None:
+        row = self._db.query_one(
+            "SELECT json FROM model_artifacts WHERE training_run_id = ?"
+            " ORDER BY created_at, artifact_id LIMIT 1",
+            (training_run_id,),
+        )
+        return ModelArtifact.model_validate_json(row["json"]) if row else None
+
+
+class EvaluationRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def append(self, report: EvaluationReport) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO evaluation_reports(evaluation_id, artifact_id, dataset_version_id,"
+            " created_at, json) VALUES(?, ?, ?, ?, ?)",
+            (
+                report.evaluation_id,
+                report.artifact_id,
+                report.dataset_version_id,
+                report.created_at.isoformat(),
+                report.model_dump_json(),
+            ),
+            f"evaluation {report.evaluation_id}",
+        )
+
+    def get(self, evaluation_id: str) -> EvaluationReport:
+        row = self._db.query_one(
+            "SELECT json FROM evaluation_reports WHERE evaluation_id = ?", (evaluation_id,)
+        )
+        if row is None:
+            raise NotFoundError(f"evaluation {evaluation_id} 不存在")
+        return EvaluationReport.model_validate_json(row["json"])
+
+    def latest_for_artifact(self, artifact_id: str) -> EvaluationReport | None:
+        row = self._db.query_one(
+            "SELECT json FROM evaluation_reports WHERE artifact_id = ?"
+            " ORDER BY created_at DESC, evaluation_id DESC LIMIT 1",
+            (artifact_id,),
+        )
+        return EvaluationReport.model_validate_json(row["json"]) if row else None
+
+
+class EvaluationFeedbackRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def append(self, feedback: EvaluationFeedback) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO evaluation_feedback(feedback_id, evaluation_id, artifact_id, task_id,"
+            " media_hash, created_at, json) VALUES(?, ?, ?, ?, ?, ?, ?)",
+            (
+                feedback.feedback_id,
+                feedback.evaluation_id,
+                feedback.artifact_id,
+                feedback.task_id,
+                feedback.media_hash,
+                feedback.created_at.isoformat(),
+                feedback.model_dump_json(),
+            ),
+            f"evaluation feedback {feedback.evaluation_id}/{feedback.media_hash[:12]}",
+        )
+
+    def list_by_task(self, task_id: str) -> list[EvaluationFeedback]:
+        rows = self._db.query_all(
+            "SELECT json FROM evaluation_feedback WHERE task_id = ?"
+            " ORDER BY created_at, feedback_id",
+            (task_id,),
+        )
+        return [EvaluationFeedback.model_validate_json(row["json"]) for row in rows]

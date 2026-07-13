@@ -21,16 +21,21 @@ from visionforge_core.storage.repositories import (
     ConceptRepository,
     CostRepository,
     CoverageRepository,
+    DatasetVersionRepository,
     DecisionRepository,
+    EvaluationFeedbackRepository,
+    EvaluationRepository,
     GoldenRepository,
     LabelRepository,
     ManifestRepository,
     MediaAssignmentRepository,
     MediaRepository,
+    ModelArtifactRepository,
     ReviewEventRepository,
     RunRepository,
     TaskRepository,
     TaxonomyRepository,
+    TrainingRunRepository,
 )
 
 MARKER = "project.json"
@@ -50,6 +55,11 @@ class Project:
         self.coverage = CoverageRepository(db)
         self.annotations = AnnotationRepository(db)
         self.claim_teaching_context = ClaimTeachingContextRepository(db)
+        self.dataset_versions = DatasetVersionRepository(db)
+        self.training_runs = TrainingRunRepository(db)
+        self.model_artifacts = ModelArtifactRepository(db)
+        self.evaluations = EvaluationRepository(db)
+        self.evaluation_feedback = EvaluationFeedbackRepository(db)
         self.runs = RunRepository(db)
         self.labels = LabelRepository(db)
         self.decisions = DecisionRepository(db)
@@ -62,6 +72,12 @@ class Project:
 
     def close(self) -> None:
         self.db.close()
+
+    def __enter__(self) -> Project:
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self.close()
 
 
 def create_project(root: Path, name: str, project_id: str) -> Project:

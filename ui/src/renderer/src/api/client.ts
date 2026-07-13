@@ -7,10 +7,19 @@ import type {
   ConceptDefinition,
   CoverageRecord,
   CoverageState,
+  DatasetVersion,
+  EvaluationFeedback,
+  EvaluationReport,
   Label,
   MediaRecord,
   MediaAssignment,
+  ModelArtifact,
+  ModelPrediction,
+  ReadinessReport,
   TaskRecord,
+  TrainingRecipe,
+  TrainingRun,
+  TrainingRunEvent,
 } from "../../../shared/contracts.generated";
 
 export interface MediaPage {
@@ -60,6 +69,23 @@ export interface TeachingState {
 export interface TeachResult {
   run_id: string;
   claims: Claim[];
+}
+
+export interface FreezeDatasetResult {
+  version: DatasetVersion;
+  readiness: ReadinessReport;
+}
+
+export interface TrainingStatusResult {
+  run: TrainingRun;
+  latest_event: TrainingRunEvent;
+  artifact: ModelArtifact | null;
+  evaluation: EvaluationReport | null;
+}
+
+export interface ApplyResult {
+  artifact_id: string;
+  predictions: ModelPrediction[];
 }
 
 export class ApiError extends Error {
@@ -244,3 +270,51 @@ export const updateCoverage = async (body: {
   concept_id: string;
   state: CoverageState;
 }): Promise<CoverageRecord> => jsonRequest("/coverage", "PUT", body);
+
+export const getReadiness = async (taskId: string): Promise<ReadinessReport> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/readiness`, "GET");
+
+export const listDatasets = async (taskId: string): Promise<DatasetVersion[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/datasets`, "GET");
+
+export const freezeDataset = async (taskId: string): Promise<FreezeDatasetResult> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/datasets/freeze`, "POST", {});
+
+export const startTraining = async (
+  datasetVersionId: string,
+  recipe?: TrainingRecipe,
+): Promise<TrainingRun> =>
+  jsonRequest("/training", "POST", {
+    dataset_version_id: datasetVersionId,
+    ...(recipe === undefined ? {} : { recipe }),
+  });
+
+export const listTrainingRuns = async (taskId: string): Promise<TrainingStatusResult[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/training`, "GET");
+
+export const cancelTraining = async (trainingRunId: string): Promise<TrainingStatusResult> =>
+  jsonRequest(`/training/${encodeURIComponent(trainingRunId)}/cancel`, "POST", {});
+
+export const listArtifacts = async (taskId: string): Promise<ModelArtifact[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/artifacts`, "GET");
+
+export const sendEvaluationFeedback = async (
+  evaluationId: string,
+  errorIndex: number,
+): Promise<EvaluationFeedback> =>
+  jsonRequest(
+    `/evaluations/${encodeURIComponent(evaluationId)}/errors/${errorIndex}/feedback`,
+    "POST",
+    {},
+  );
+
+export const applyArtifact = async (artifactId: string, file: File): Promise<ApplyResult> => {
+  const baseUrl = await getBaseUrl();
+  const data = new FormData();
+  data.append("file", file);
+  const response = await fetch(`${baseUrl}/artifacts/${encodeURIComponent(artifactId)}/infer`, {
+    body: data,
+    method: "POST",
+  });
+  return parseResponse<ApplyResult>(response);
+};

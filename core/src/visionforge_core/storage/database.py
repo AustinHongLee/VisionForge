@@ -169,12 +169,75 @@ CREATE TABLE claim_teaching_context(
 CREATE INDEX idx_claim_context_scope ON claim_teaching_context(task_id, concept_id);
 """
 
+_V0005 = """
+CREATE TABLE teaching_dataset_versions(
+    dataset_version_id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    version_number INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(task_id, version_number)
+);
+CREATE INDEX idx_teaching_datasets_task ON teaching_dataset_versions(task_id, version_number);
+CREATE TABLE training_runs(
+    training_run_id TEXT PRIMARY KEY,
+    dataset_version_id TEXT NOT NULL REFERENCES teaching_dataset_versions(dataset_version_id),
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_training_runs_dataset ON training_runs(dataset_version_id, created_at);
+CREATE TABLE training_run_events(
+    event_id TEXT PRIMARY KEY,
+    training_run_id TEXT NOT NULL REFERENCES training_runs(training_run_id),
+    status TEXT NOT NULL,
+    at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_training_events_run ON training_run_events(training_run_id, at, event_id);
+CREATE TABLE model_artifacts(
+    artifact_id TEXT PRIMARY KEY,
+    artifact_hash TEXT NOT NULL,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    dataset_version_id TEXT NOT NULL REFERENCES teaching_dataset_versions(dataset_version_id),
+    training_run_id TEXT NOT NULL REFERENCES training_runs(training_run_id),
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_artifacts_task ON model_artifacts(task_id, created_at);
+CREATE INDEX idx_artifacts_run ON model_artifacts(training_run_id);
+CREATE TABLE evaluation_reports(
+    evaluation_id TEXT PRIMARY KEY,
+    artifact_id TEXT NOT NULL REFERENCES model_artifacts(artifact_id),
+    dataset_version_id TEXT NOT NULL REFERENCES teaching_dataset_versions(dataset_version_id),
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_evaluations_artifact ON evaluation_reports(artifact_id, created_at);
+"""
+
+_V0006 = """
+CREATE TABLE evaluation_feedback(
+    feedback_id TEXT PRIMARY KEY,
+    evaluation_id TEXT NOT NULL REFERENCES evaluation_reports(evaluation_id),
+    artifact_id TEXT NOT NULL REFERENCES model_artifacts(artifact_id),
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    media_hash TEXT NOT NULL REFERENCES media(media_hash),
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(evaluation_id, media_hash)
+);
+CREATE INDEX idx_feedback_task_media ON evaluation_feedback(task_id, media_hash);
+"""
+
 # 遷移只增不改：新版本＝追加項目（D9：任何歷史專案永遠打得開）。
 MIGRATIONS: tuple[tuple[int, str], ...] = (
     (1, _V0001),
     (2, _V0002),
     (3, _V0003),
     (4, _V0004),
+    (5, _V0005),
+    (6, _V0006),
 )
 MAX_SCHEMA = MIGRATIONS[-1][0]
 

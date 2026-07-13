@@ -131,6 +131,12 @@ def test_v3_project_migrates_additively_to_teaching_schema(tmp_path):
     project.close()
     conn = sqlite3.connect(root / "project.db")
     for table in (
+        "evaluation_feedback",
+        "evaluation_reports",
+        "model_artifacts",
+        "training_run_events",
+        "training_runs",
+        "teaching_dataset_versions",
         "claim_teaching_context",
         "annotation_revisions",
         "coverage",
@@ -139,7 +145,7 @@ def test_v3_project_migrates_additively_to_teaching_schema(tmp_path):
         "tasks",
     ):
         conn.execute(f"DROP TABLE {table}")
-    conn.execute("DELETE FROM schema_migrations WHERE version = 4")
+    conn.execute("DELETE FROM schema_migrations WHERE version >= 4")
     conn.commit()
     conn.close()
 
@@ -147,7 +153,7 @@ def test_v3_project_migrates_additively_to_teaching_schema(tmp_path):
     try:
         assert reopened.tasks.list() == []
         assert reopened.db.query_one(
-            "SELECT 1 FROM schema_migrations WHERE version = 4"
+            "SELECT 1 FROM schema_migrations WHERE version = 6"
         ) is not None
     finally:
         reopened.close()

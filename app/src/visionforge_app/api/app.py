@@ -23,14 +23,25 @@ from visionforge_core.contracts import (
     ConceptDefinition,
     CoverageRecord,
     CoverageState,
+    DatasetVersion,
+    EvaluationFeedback,
+    EvaluationReport,
     GoldenSetEntry,
     Label,
     MediaAssignment,
     MediaRecord,
     MediaSource,
+    ModelArtifact,
+    ModelPrediction,
+    ReadinessReport,
     TaskRecord,
+    TrainingRecipe,
+    TrainingRun,
+    TrainingRunEvent,
 )
 from visionforge_core.contracts.claims import Geometry
+from visionforge_core.dataset import DatasetNotReadyError, freeze_dataset, inspect_readiness
+from visionforge_core.evaluation import send_error_to_teaching
 from visionforge_core.providers import InferenceRequest, VisionProvider
 from visionforge_core.review import ClaimForReview, approve, list_pending, reject
 from visionforge_core.storage import Project, open_project
@@ -54,6 +65,8 @@ from visionforge_app.processing import UnknownMediaError, process_media
 from visionforge_app.processing.run import apply_latest_to_claims
 from visionforge_app.provider_config import ProviderConfigurationError, load_provider
 from visionforge_app.query import MediaPage, list_media, thumbnail_path
+from visionforge_app.training import TrainingManager, interrupt_orphaned_runs
+from visionforge_app.training.tiny_detector import TrainingDependencyError, load_and_predict
 
 
 class HealthResponse(BaseModel):
@@ -182,6 +195,33 @@ class SetCoverageRequest(BaseModel):
     state: CoverageState
 
 
+class FreezeDatasetRequest(BaseModel):
+    concept_ids: tuple[str, ...] = ()
+
+
+class FreezeDatasetResponse(BaseModel):
+    version: DatasetVersion
+    readiness: ReadinessReport
+
+
+class StartTrainingRequest(BaseModel):
+    dataset_version_id: str
+    recipe: TrainingRecipe = TrainingRecipe()
+    retry_of: str | None = None
+
+
+class TrainingStatusResponse(BaseModel):
+    run: TrainingRun
+    latest_event: TrainingRunEvent
+    artifact: ModelArtifact | None = None
+    evaluation: EvaluationReport | None = None
+
+
+class ApplyResponse(BaseModel):
+    artifact_id: str
+    predictions: tuple[ModelPrediction, ...]
+
+
 _LOCAL_RENDERER_ORIGIN_RE = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
 _CROCKFORD32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 _LOCAL_ACTOR = "local-user"
@@ -230,7 +270,11 @@ def _review_conflict(exc: ConflictError) -> HTTPException:
     )
 
 
-def create_app(project: Project, provider: VisionProvider | None = None) -> FastAPI:
+def create_app(
+    project: Project,
+    provider: VisionProvider | None = None,
+    training_manager: TrainingManager | None = None,
+) -> FastAPI:
     """建立可測的 FastAPI app；不在 import 時啟動服務。"""
 
     app = FastAPI(title="VisionForge local API")
@@ -243,6 +287,8 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
     )
     provider_override = provider
     project_root = project.root
+    trainer = training_manager or TrainingManager(project_root, id_factory=_new_ulid)
+    interrupt_orphaned_runs(project, now=_utc_now(), id_factory=_new_ulid)
 
     @contextmanager
     def request_project() -> Iterator[Project]:
@@ -485,6 +531,148 @@ def create_app(project: Project, provider: VisionProvider | None = None) -> Fast
         except ConflictError as exc:
             raise HTTPException(status_code=409, detail={"error": str(exc)}) from exc
 
+    @app.get("/tasks/{task_id}/readiness", response_model=ReadinessReport)
+    def readiness(
+        task_id: str,
+        concept_id: Annotated[list[str] | None, Query()] = None,
+    ) -> ReadinessReport:
+        try:
+            with request_project() as current:
+                return inspect_readiness(
+                    current, task_id=task_id, concept_ids=tuple(concept_id or ())
+                )
+        except NotFoundError as exc:
+            raise HTTPException(status_code=404, detail={"error": "scope_not_found"}) from exc
+
+    @app.get("/tasks/{task_id}/datasets", response_model=list[DatasetVersion])
+    def dataset_versions(task_id: str) -> list[DatasetVersion]:
+        with request_project() as current:
+            return current.dataset_versions.list_by_task(task_id)
+
+    @app.post(
+        "/tasks/{task_id}/datasets/freeze", response_model=FreezeDatasetResponse
+    )
+    def freeze_dataset_endpoint(
+        task_id: str, request: FreezeDatasetRequest
+    ) -> FreezeDatasetResponse:
+        try:
+            with request_project() as current:
+                version, report = freeze_dataset(
+                    current,
+                    dataset_version_id=_new_ulid(),
+                    task_id=task_id,
+                    concept_ids=request.concept_ids,
+                    created_at=_utc_now(),
+                )
+                return FreezeDatasetResponse(version=version, readiness=report)
+        except DatasetNotReadyError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "error": "dataset_not_ready",
+                    "readiness": exc.report.model_dump(mode="json"),
+                },
+            ) from exc
+        except NotFoundError as exc:
+            raise HTTPException(status_code=404, detail={"error": "scope_not_found"}) from exc
+
+    @app.post("/training", response_model=TrainingRun)
+    def start_training(request: StartTrainingRequest) -> TrainingRun:
+        try:
+            return trainer.start(
+                request.dataset_version_id,
+                recipe=request.recipe,
+                retry_of=request.retry_of,
+            )
+        except NotFoundError as exc:
+            raise HTTPException(status_code=404, detail={"error": "dataset_not_found"}) from exc
+        except ConflictError as exc:
+            raise HTTPException(status_code=409, detail={"error": str(exc)}) from exc
+
+    @app.get("/tasks/{task_id}/training", response_model=list[TrainingStatusResponse])
+    def training_runs(task_id: str) -> list[TrainingStatusResponse]:
+        with request_project() as current:
+            runs = current.training_runs.list_by_task(task_id)
+            return [_training_status(current, run) for run in runs]
+
+    @app.get("/training/{training_run_id}", response_model=TrainingStatusResponse)
+    def training_status(training_run_id: str) -> TrainingStatusResponse:
+        try:
+            with request_project() as current:
+                return _training_status(
+                    current, current.training_runs.get(training_run_id)
+                )
+        except NotFoundError as exc:
+            raise HTTPException(
+                status_code=404, detail={"error": "training_run_not_found"}
+            ) from exc
+
+    @app.post("/training/{training_run_id}/cancel", response_model=TrainingStatusResponse)
+    def cancel_training(training_run_id: str) -> TrainingStatusResponse:
+        try:
+            trainer.cancel(training_run_id)
+            with request_project() as current:
+                return _training_status(
+                    current, current.training_runs.get(training_run_id)
+                )
+        except NotFoundError as exc:
+            raise HTTPException(
+                status_code=404, detail={"error": "training_run_not_found"}
+            ) from exc
+        except ConflictError as exc:
+            raise HTTPException(status_code=409, detail={"error": str(exc)}) from exc
+
+    @app.get("/tasks/{task_id}/artifacts", response_model=list[ModelArtifact])
+    def artifacts(task_id: str) -> list[ModelArtifact]:
+        with request_project() as current:
+            return current.model_artifacts.list_by_task(task_id)
+
+    @app.post("/artifacts/{artifact_id}/infer", response_model=ApplyResponse)
+    async def apply_artifact(
+        artifact_id: str, file: Annotated[UploadFile, File()]
+    ) -> ApplyResponse:
+        data = await file.read()
+        try:
+            with request_project() as current:
+                artifact = current.model_artifacts.get(artifact_id)
+                path = current.root / artifact.relative_path
+                if not path.is_file():
+                    raise NotFoundError("artifact file 不存在")
+                if path.name.endswith(".fixture.json"):
+                    predictions: tuple[ModelPrediction, ...] = ()
+                else:
+                    predictions = load_and_predict(
+                        path, data, threshold=artifact.confidence_threshold
+                    )
+                return ApplyResponse(artifact_id=artifact_id, predictions=predictions)
+        except NotFoundError as exc:
+            raise HTTPException(status_code=404, detail={"error": "artifact_not_found"}) from exc
+        except TrainingDependencyError as exc:
+            raise HTTPException(status_code=503, detail={"error": str(exc)}) from exc
+
+    @app.post(
+        "/evaluations/{evaluation_id}/errors/{error_index}/feedback",
+        response_model=EvaluationFeedback,
+    )
+    def evaluation_feedback(
+        evaluation_id: str, error_index: int
+    ) -> EvaluationFeedback:
+        try:
+            with request_project() as current:
+                return send_error_to_teaching(
+                    current,
+                    evaluation_id=evaluation_id,
+                    error_index=error_index,
+                    feedback_id=_new_ulid(),
+                    created_at=_utc_now(),
+                )
+        except NotFoundError as exc:
+            raise HTTPException(
+                status_code=404, detail={"error": "evaluation_error_not_found"}
+            ) from exc
+        except ConflictError as exc:
+            raise HTTPException(status_code=409, detail={"error": str(exc)}) from exc
+
     @app.get("/media/{media_hash}/thumbnail")
     def thumbnail(media_hash: str) -> FileResponse:
         with request_project() as current:
@@ -658,4 +846,17 @@ def _export_response(outcome: ExportOutcome) -> ExportResponse:
         image_count=outcome.image_count,
         label_count=outcome.label_count,
         class_names=outcome.class_names,
+    )
+
+
+def _training_status(project: Project, run: TrainingRun) -> TrainingStatusResponse:
+    artifact = project.model_artifacts.by_run(run.training_run_id)
+    evaluation = (
+        None if artifact is None else project.evaluations.latest_for_artifact(artifact.artifact_id)
+    )
+    return TrainingStatusResponse(
+        run=run,
+        latest_event=project.training_runs.latest_event(run.training_run_id),
+        artifact=artifact,
+        evaluation=evaluation,
     )

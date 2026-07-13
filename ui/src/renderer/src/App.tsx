@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { MediaRecord } from "../../shared/contracts.generated";
 import { importFile, listMedia, thumbnailUrl } from "./api/client";
+import ApplyView from "./components/ApplyView";
+import DistillView from "./components/DistillView";
 import DropZone from "./components/DropZone";
 import TeachingView from "./components/TeachingView";
 import ThumbnailGrid from "./components/ThumbnailGrid";
@@ -118,6 +120,11 @@ const App = (): React.JSX.Element => {
           <p className="eyebrow">{active.english}</p>
           <h2 id="station-title">{active.label}</h2>
         </div>
+        {apiError !== null ? (
+          <p className="error-message" role="alert">
+            {apiError}
+          </p>
+        ) : null}
 
         {activeStation === "teach" ? (
           <div className="understand-layout">
@@ -129,11 +136,6 @@ const App = (): React.JSX.Element => {
                 }}
                 pendingFiles={pendingFiles}
               />
-              {apiError !== null ? (
-                <p className="error-message" role="alert">
-                  {apiError}
-                </p>
-              ) : null}
               {isLoadingMedia ? <p className="muted">載入媒體中</p> : null}
               <ThumbnailGrid
                 media={media}
@@ -148,6 +150,10 @@ const App = (): React.JSX.Element => {
               onError={setApiError}
             />
           </div>
+        ) : activeStation === "distill" ? (
+          <DistillView onError={setApiError} />
+        ) : activeStation === "apply" ? (
+          <ApplyView onError={setApiError} />
         ) : (
           <div className="empty-panel">
             <p className="eyebrow">{active.english}</p>

@@ -72,6 +72,8 @@ describe("App", () => {
     vi.mocked(bridge.getAppVersion).mockResolvedValue("0.1.0");
     fetchMock.mockReset();
     globalThis.fetch = fetchMock;
+    URL.createObjectURL = vi.fn(() => "blob:preview");
+    URL.revokeObjectURL = vi.fn();
     Object.defineProperty(window, "bridge", { configurable: true, value: bridge });
   });
 
@@ -96,12 +98,10 @@ describe("App", () => {
     expect(await screen.findByText("v0.1.0")).toBeInTheDocument();
   });
 
-  it("switches to construction panels for later stations", () => {
+  it("keeps the release station explicit while packaging is not yet built", () => {
     fetchMock.mockImplementation(emptyApi);
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: /鑄造/ }));
-    expect(screen.getByRole("heading", { name: "鑄造施工中" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /版本/ }));
     expect(screen.getByRole("heading", { name: "版本施工中" })).toBeInTheDocument();
   });
@@ -262,6 +262,113 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "框完了" }));
     expect(await screen.findByText("verified_complete")).toBeInTheDocument();
     expect(screen.queryByText("批准")).not.toBeInTheDocument();
+  });
+
+  it("freezes a dataset and starts a child-process training attempt from Distill", async () => {
+    const task = {
+      created_at: "2026-07-13T00:00:00Z",
+      kind: "detect",
+      name: "閥件偵測",
+      task_id: TASK_ID,
+    };
+    const dataset = {
+      class_map: [{ class_index: 0, concept_id: CONCEPT_ID, display_name: "Gate Valve" }],
+      concept_ids: [CONCEPT_ID],
+      created_at: "2026-07-13T00:00:00Z",
+      dataset_version_id: "0000000000000000000000000D",
+      items: [
+        { annotations: [], coverage: [], media_hash: "1".repeat(64), source_group_id: "a", split: "train" },
+        { annotations: [], coverage: [], media_hash: "2".repeat(64), source_group_id: "b", split: "validation" },
+      ],
+      task_id: TASK_ID,
+      version_number: 1,
+    };
+    let freezeCalls = 0;
+    let trainingCalls = 0;
+    fetchMock.mockImplementation(async (input, init) => {
+      const path = new URL(String(input)).pathname;
+      const method = init?.method ?? "GET";
+      if (path === "/media") return jsonResponse(page([]));
+      if (path === "/tasks") return jsonResponse([task]);
+      if (path.endsWith("/readiness")) {
+        return jsonResponse({ blockers: [], warnings: [{ code: "few", message: "樣本偏少" }] });
+      }
+      if (path.endsWith("/datasets") && method === "GET") return jsonResponse([dataset]);
+      if (path.endsWith("/datasets/freeze")) {
+        freezeCalls += 1;
+        return jsonResponse({ readiness: { blockers: [], warnings: [] }, version: dataset });
+      }
+      if (path.endsWith("/training") && method === "GET") return jsonResponse([]);
+      if (path.endsWith("/artifacts")) return jsonResponse([]);
+      if (path === "/training" && method === "POST") {
+        trainingCalls += 1;
+        return jsonResponse({ training_run_id: "0000000000000000000000000E" });
+      }
+      throw new Error(`Unexpected ${method} ${path}`);
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /鑄造/ }));
+    expect(await screen.findByText("樣本偏少")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "凍結新資料版本" }));
+    await waitFor(() => expect(freezeCalls).toBe(1));
+    fireEvent.click(await screen.findByRole("button", { name: "開始鑄造" }));
+    await waitFor(() => expect(trainingCalls).toBe(1));
+  });
+
+  it("runs an immutable ModelArtifact against a new unimported image", async () => {
+    const task = {
+      created_at: "2026-07-13T00:00:00Z",
+      kind: "detect",
+      name: "閥件偵測",
+      task_id: TASK_ID,
+    };
+    const artifactId = "0000000000000000000000000F";
+    const artifact = {
+      artifact_hash: "a".repeat(64),
+      artifact_id: artifactId,
+      class_map: [{ class_index: 0, concept_id: CONCEPT_ID, display_name: "Gate Valve" }],
+      confidence_threshold: 0.35,
+      created_at: "2026-07-13T00:00:00Z",
+      dataset_version_id: "0000000000000000000000000D",
+      input_size: 256,
+      relative_path: "artifacts/model.pt",
+      task_id: TASK_ID,
+      training_run_id: "0000000000000000000000000E",
+    };
+    fetchMock.mockImplementation(async (input, init) => {
+      const path = new URL(String(input)).pathname;
+      if (path === "/media") return jsonResponse(page([]));
+      if (path === "/tasks") return jsonResponse([task]);
+      if (path.endsWith("/artifacts") && (init?.method ?? "GET") === "GET") {
+        return jsonResponse([artifact]);
+      }
+      if (path === `/artifacts/${artifactId}/infer`) {
+        expect(init?.body).toBeInstanceOf(FormData);
+        return jsonResponse({
+          artifact_id: artifactId,
+          predictions: [
+            {
+              bbox: { type: "bbox", x1: 0.1, x2: 0.5, y1: 0.2, y2: 0.6 },
+              concept_id: CONCEPT_ID,
+              confidence: 0.88,
+              display_name: "Gate Valve",
+            },
+          ],
+        });
+      }
+      throw new Error(`Unexpected request ${path}`);
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /應用/ }));
+    const input = await screen.findByLabelText("選擇新圖片");
+    fireEvent.change(input, {
+      target: { files: [new File(["image"], "new.png", { type: "image/png" })] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "執行本地模型" }));
+
+    expect(await screen.findByText("Gate Valve 88%")).toBeInTheDocument();
   });
 
   it("shows an error state when the API base URL is not ready", async () => {

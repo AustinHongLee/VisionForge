@@ -476,6 +476,34 @@
       "title": "ClassCalibration",
       "type": "object"
     },
+    "ClassMapEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "class_index": {
+          "minimum": 0,
+          "title": "Class Index",
+          "type": "integer"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "concept_id",
+        "class_index",
+        "display_name"
+      ],
+      "title": "ClassMapEntry",
+      "type": "object"
+    },
     "Concept": {
       "additionalProperties": false,
       "properties": {
@@ -857,6 +885,212 @@
       "title": "CoverageRecord",
       "type": "object"
     },
+    "CoverageSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "verified_complete",
+            "verified_absent"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "concept_id",
+        "state"
+      ],
+      "title": "CoverageSnapshot",
+      "type": "object"
+    },
+    "DatasetAnnotation": {
+      "additionalProperties": false,
+      "properties": {
+        "annotation_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Annotation Id",
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBox"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "revision_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Revision Id",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "manual",
+            "teacher_accepted",
+            "teacher_edited",
+            "imported"
+          ],
+          "title": "AnnotationSource",
+          "type": "string"
+        },
+        "source_claim_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Claim Ref"
+        }
+      },
+      "required": [
+        "annotation_id",
+        "revision_id",
+        "concept_id",
+        "bbox",
+        "source"
+      ],
+      "title": "DatasetAnnotation",
+      "type": "object"
+    },
+    "DatasetItem": {
+      "additionalProperties": false,
+      "properties": {
+        "annotations": {
+          "items": {
+            "$ref": "#/$defs/DatasetAnnotation"
+          },
+          "title": "Annotations",
+          "type": "array"
+        },
+        "coverage": {
+          "items": {
+            "$ref": "#/$defs/CoverageSnapshot"
+          },
+          "title": "Coverage",
+          "type": "array"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "source_group_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Source Group Id",
+          "type": "string"
+        },
+        "split": {
+          "enum": [
+            "train",
+            "validation"
+          ],
+          "title": "Split",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_hash",
+        "source_group_id",
+        "split",
+        "coverage",
+        "annotations"
+      ],
+      "title": "DatasetItem",
+      "type": "object"
+    },
+    "DatasetVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "class_map": {
+          "items": {
+            "$ref": "#/$defs/ClassMapEntry"
+          },
+          "minItems": 1,
+          "title": "Class Map",
+          "type": "array"
+        },
+        "concept_ids": {
+          "items": {
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Concept Ids",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_version_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Dataset Version Id",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/DatasetItem"
+          },
+          "minItems": 2,
+          "title": "Items",
+          "type": "array"
+        },
+        "parent_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Ref"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "version_number": {
+          "minimum": 1,
+          "title": "Version Number",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "dataset_version_id",
+        "version_number",
+        "task_id",
+        "concept_ids",
+        "class_map",
+        "items",
+        "created_at"
+      ],
+      "title": "DatasetVersion",
+      "type": "object"
+    },
     "DatasetVersionManifest": {
       "additionalProperties": false,
       "description": "一個 Dataset 版本 = 一份清單，不是一份拷貝。回滾 = 以任一舊版為 parent\n開新版；歷史版本永不修改、永不刪除（D5）。黃金集項目不得出現在此（D8）。",
@@ -1107,6 +1341,216 @@
         "choice"
       ],
       "title": "DecisionRecord",
+      "type": "object"
+    },
+    "EvaluationError": {
+      "additionalProperties": false,
+      "properties": {
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "expected_bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBox"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "kind": {
+          "enum": [
+            "missed",
+            "false_positive",
+            "localization",
+            "classification"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "predicted_bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBox"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "media_hash",
+        "kind",
+        "concept_id"
+      ],
+      "title": "EvaluationError",
+      "type": "object"
+    },
+    "EvaluationFeedback": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "evaluation_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "feedback_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Feedback Id",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "feedback_id",
+        "evaluation_id",
+        "artifact_id",
+        "task_id",
+        "media_hash",
+        "concept_id",
+        "created_at"
+      ],
+      "title": "EvaluationFeedback",
+      "type": "object"
+    },
+    "EvaluationMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "precision",
+            "recall",
+            "mean_iou"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "EvaluationMetric",
+      "type": "object"
+    },
+    "EvaluationReport": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_version_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Dataset Version Id",
+          "type": "string"
+        },
+        "errors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvaluationError"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "evaluation_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/EvaluationMetric"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "validation_media_hashes": {
+          "items": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Validation Media Hashes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evaluation_id",
+        "artifact_id",
+        "dataset_version_id",
+        "validation_media_hashes",
+        "metrics",
+        "created_at"
+      ],
+      "title": "EvaluationReport",
       "type": "object"
     },
     "GoldenSetEntry": {
@@ -1694,6 +2138,119 @@
       "title": "MediaSubject",
       "type": "object"
     },
+    "ModelArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Artifact Hash",
+          "type": "string"
+        },
+        "artifact_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "class_map": {
+          "items": {
+            "$ref": "#/$defs/ClassMapEntry"
+          },
+          "title": "Class Map",
+          "type": "array"
+        },
+        "confidence_threshold": {
+          "default": 0.35,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence Threshold",
+          "type": "number"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_version_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Dataset Version Id",
+          "type": "string"
+        },
+        "input_size": {
+          "maximum": 2048,
+          "minimum": 64,
+          "title": "Input Size",
+          "type": "integer"
+        },
+        "relative_path": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "training_run_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Training Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "artifact_hash",
+        "task_id",
+        "dataset_version_id",
+        "training_run_id",
+        "relative_path",
+        "class_map",
+        "input_size",
+        "created_at"
+      ],
+      "title": "ModelArtifact",
+      "type": "object"
+    },
+    "ModelPrediction": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/BBox"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "display_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "concept_id",
+        "display_name",
+        "bbox",
+        "confidence"
+      ],
+      "title": "ModelPrediction",
+      "type": "object"
+    },
     "Point": {
       "additionalProperties": false,
       "properties": {
@@ -1935,6 +2492,78 @@
       "title": "ProviderCapability",
       "type": "object"
     },
+    "ReadinessIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "concept_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Concept Id"
+        },
+        "media_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Hash"
+        },
+        "message": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ReadinessIssue",
+      "type": "object"
+    },
+    "ReadinessReport": {
+      "additionalProperties": false,
+      "properties": {
+        "blockers": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReadinessIssue"
+          },
+          "title": "Blockers",
+          "type": "array"
+        },
+        "warnings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReadinessIssue"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "title": "ReadinessReport",
+      "type": "object"
+    },
     "Review": {
       "additionalProperties": false,
       "properties": {
@@ -2159,6 +2788,183 @@
         "created_at"
       ],
       "title": "TaxonomyNode",
+      "type": "object"
+    },
+    "TrainingRecipe": {
+      "additionalProperties": false,
+      "properties": {
+        "batch_size": {
+          "default": 4,
+          "maximum": 1024,
+          "minimum": 1,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "epochs": {
+          "default": 20,
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Epochs",
+          "type": "integer"
+        },
+        "input_size": {
+          "default": 256,
+          "maximum": 2048,
+          "minimum": 64,
+          "title": "Input Size",
+          "type": "integer"
+        },
+        "learning_rate": {
+          "default": 0.001,
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "seed": {
+          "default": 1337,
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "title": "TrainingRecipe",
+      "type": "object"
+    },
+    "TrainingRun": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_version_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Dataset Version Id",
+          "type": "string"
+        },
+        "recipe": {
+          "$ref": "#/$defs/TrainingRecipe"
+        },
+        "retry_of": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry Of"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "trainer_id": {
+          "const": "visionforge_tiny_detector",
+          "default": "visionforge_tiny_detector",
+          "title": "Trainer Id",
+          "type": "string"
+        },
+        "trainer_version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Trainer Version",
+          "type": "string"
+        },
+        "training_run_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Training Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "training_run_id",
+        "dataset_version_id",
+        "task_id",
+        "trainer_version",
+        "recipe",
+        "created_at"
+      ],
+      "title": "TrainingRun",
+      "type": "object"
+    },
+    "TrainingRunEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "message": {
+          "default": "",
+          "maxLength": 512,
+          "title": "Message",
+          "type": "string"
+        },
+        "progress": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Progress"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed",
+            "cancelled",
+            "interrupted"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "technical_detail": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Technical Detail",
+          "type": "string"
+        },
+        "training_run_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Training Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "training_run_id",
+        "status",
+        "at"
+      ],
+      "title": "TrainingRunEvent",
       "type": "object"
     },
     "UnknownGeometry": {
