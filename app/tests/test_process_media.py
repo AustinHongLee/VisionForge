@@ -38,6 +38,11 @@ def _id_factory():
     return lambda: next(ids)
 
 
+def _id_factory_from(start: int):
+    ids = iter(f"{value:026d}" for value in range(start, start + 4))
+    return lambda: next(ids)
+
+
 def _jpeg_bytes(size: tuple[int, int] = (16, 10)) -> bytes:
     output = BytesIO()
     Image.new("RGB", size, (32, 96, 160)).save(output, format="JPEG")
@@ -188,5 +193,35 @@ def test_process_media_unknown_media_is_explicit(tmp_path: Path) -> None:
                 now=NOW,
                 id_factory=_id_factory(),
             )
+    finally:
+        project.close()
+
+
+def test_persisted_claim_ids_are_run_scoped_even_when_provider_reuses_draft_id(
+    tmp_path: Path,
+) -> None:
+    project = _project(tmp_path, "run-scoped-claim")
+    try:
+        media_hash = _import_sample(project)
+        first = process_media(
+            project,
+            media_hash,
+            [Concept(raw_text="bolt")],
+            provider=StaticBoltProvider(),
+            now=NOW,
+            id_factory=_id_factory_from(10),
+        ).run
+        second = process_media(
+            project,
+            media_hash,
+            [Concept(raw_text="bolt")],
+            provider=StaticBoltProvider(),
+            now=NOW,
+            id_factory=_id_factory_from(20),
+        ).run
+
+        assert first.claims[0].claim_id != second.claims[0].claim_id
+        assert project.runs.get_claim(first.claims[0].claim_id).concept.raw_text == "bolt"
+        assert project.runs.get_claim(second.claims[0].claim_id).concept.raw_text == "bolt"
     finally:
         project.close()

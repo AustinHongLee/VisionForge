@@ -104,9 +104,10 @@ def record_inference_run(
         status="success",
         produced_refs=(InputRef(kind="run", id=run_id),),
     )
-    # append-only；順序：decision→cost→run(claims 原子)→outcome。
-    project.decisions.append(decision)
-    project.costs.append(cost)
-    project.runs.append(run)
-    project.decisions.append_outcome(outcome)
+    # 一次 provider 調用是一個原子事實；RunRepository 的內層交易會使用 savepoint。
+    with project.db.transaction():
+        project.decisions.append(decision)
+        project.costs.append(cost)
+        project.runs.append(run)
+        project.decisions.append_outcome(outcome)
     return run

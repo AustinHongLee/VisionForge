@@ -1,9 +1,26 @@
 import type {
+  AnnotationRevision,
+  BBox,
+  CapabilityRelease,
   CalibrationSnapshot,
   Claim,
   Concept,
+  ConceptDefinition,
+  CoverageRecord,
+  CoverageState,
+  DatasetVersion,
+  EvaluationFeedback,
+  EvaluationReport,
   Label,
   MediaRecord,
+  MediaAssignment,
+  ModelArtifact,
+  ModelPrediction,
+  ReadinessReport,
+  TaskRecord,
+  TrainingRecipe,
+  TrainingRun,
+  TrainingRunEvent,
 } from "../../../shared/contracts.generated";
 
 export interface MediaPage {
@@ -33,14 +50,52 @@ export interface PendingItem {
 
 export interface ReviewDecisionInput {
   claim_id: string;
-  run_ref: string;
-  media_hash: string;
   reviewer: string;
 }
 
 export interface RejectResult {
   event_id: string;
   to_status: string;
+}
+
+export interface TeachingState {
+  task: TaskRecord;
+  assignment: MediaAssignment;
+  concepts: ConceptDefinition[];
+  coverage: CoverageRecord[];
+  annotations: AnnotationRevision[];
+  teacher_claims: Claim[];
+}
+
+export interface TeachResult {
+  run_id: string;
+  claims: Claim[];
+}
+
+export interface TeacherStatus {
+  provider_id: string;
+  provider_version: string;
+  locality: "local" | "cloud";
+  requires_consent: boolean;
+  consented: boolean;
+  media_scope: "selected_image_only";
+}
+
+export interface FreezeDatasetResult {
+  version: DatasetVersion;
+  readiness: ReadinessReport;
+}
+
+export interface TrainingStatusResult {
+  run: TrainingRun;
+  latest_event: TrainingRunEvent;
+  artifact: ModelArtifact | null;
+  evaluation: EvaluationReport | null;
+}
+
+export interface ApplyResult {
+  artifact_id: string;
+  predictions: ModelPrediction[];
 }
 
 export class ApiError extends Error {
@@ -139,4 +194,154 @@ export const recalibrate = async (): Promise<CalibrationSnapshot | null> => {
     return null;
   }
   return parseResponse<CalibrationSnapshot>(response);
+};
+
+const jsonRequest = async <T>(path: string, method: string, body?: unknown): Promise<T> => {
+  const baseUrl = await getBaseUrl();
+  const response = await fetch(`${baseUrl}${path}`, {
+    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: body === undefined ? undefined : { "content-type": "application/json" },
+    method,
+  });
+  return parseResponse<T>(response);
+};
+
+export const listTasks = async (): Promise<TaskRecord[]> => jsonRequest("/tasks", "GET");
+
+export const createTask = async (name: string): Promise<TaskRecord> =>
+  jsonRequest("/tasks", "POST", { name });
+
+export const listConcepts = async (taskId: string): Promise<ConceptDefinition[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/concepts`, "GET");
+
+export const createConcept = async (
+  taskId: string,
+  displayName: string,
+): Promise<ConceptDefinition> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/concepts`, "POST", {
+    display_name: displayName,
+  });
+
+export const assignMedia = async (
+  taskId: string,
+  mediaHash: string,
+): Promise<MediaAssignment> =>
+  jsonRequest(
+    `/tasks/${encodeURIComponent(taskId)}/media/${encodeURIComponent(mediaHash)}`,
+    "POST",
+    {},
+  );
+
+export const teachingState = async (
+  taskId: string,
+  mediaHash: string,
+): Promise<TeachingState> =>
+  jsonRequest(
+    `/tasks/${encodeURIComponent(taskId)}/media/${encodeURIComponent(mediaHash)}/teaching`,
+    "GET",
+  );
+
+export const teach = async (
+  taskId: string,
+  mediaHash: string,
+  conceptIds: string[],
+): Promise<TeachResult> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/teach`, "POST", {
+    concept_ids: conceptIds,
+    media_hash: mediaHash,
+  });
+
+export const teacherStatus = async (): Promise<TeacherStatus> =>
+  jsonRequest("/teacher/status", "GET");
+
+export const grantTeacherConsent = async (): Promise<TeacherStatus> =>
+  jsonRequest("/teacher/consent", "POST", {});
+
+export const addAnnotation = async (body: {
+  task_id: string;
+  media_hash: string;
+  concept_id: string;
+  bbox?: BBox;
+  source_claim_ref?: string;
+}): Promise<AnnotationRevision> => jsonRequest("/annotations", "POST", body);
+
+export const editAnnotation = async (
+  annotationId: string,
+  conceptId: string,
+  bbox: BBox,
+): Promise<AnnotationRevision> =>
+  jsonRequest(`/annotations/${encodeURIComponent(annotationId)}`, "PATCH", {
+    bbox,
+    concept_id: conceptId,
+  });
+
+export const deleteAnnotation = async (
+  annotationId: string,
+): Promise<AnnotationRevision> =>
+  jsonRequest(`/annotations/${encodeURIComponent(annotationId)}`, "DELETE");
+
+export const updateCoverage = async (body: {
+  task_id: string;
+  media_hash: string;
+  concept_id: string;
+  state: CoverageState;
+}): Promise<CoverageRecord> => jsonRequest("/coverage", "PUT", body);
+
+export const getReadiness = async (taskId: string): Promise<ReadinessReport> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/readiness`, "GET");
+
+export const listDatasets = async (taskId: string): Promise<DatasetVersion[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/datasets`, "GET");
+
+export const freezeDataset = async (taskId: string): Promise<FreezeDatasetResult> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/datasets/freeze`, "POST", {});
+
+export const startTraining = async (
+  datasetVersionId: string,
+  recipe?: TrainingRecipe,
+): Promise<TrainingRun> =>
+  jsonRequest("/training", "POST", {
+    dataset_version_id: datasetVersionId,
+    ...(recipe === undefined ? {} : { recipe }),
+  });
+
+export const listTrainingRuns = async (taskId: string): Promise<TrainingStatusResult[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/training`, "GET");
+
+export const cancelTraining = async (trainingRunId: string): Promise<TrainingStatusResult> =>
+  jsonRequest(`/training/${encodeURIComponent(trainingRunId)}/cancel`, "POST", {});
+
+export const listArtifacts = async (taskId: string): Promise<ModelArtifact[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/artifacts`, "GET");
+
+export const sendEvaluationFeedback = async (
+  evaluationId: string,
+  errorIndex: number,
+): Promise<EvaluationFeedback> =>
+  jsonRequest(
+    `/evaluations/${encodeURIComponent(evaluationId)}/errors/${errorIndex}/feedback`,
+    "POST",
+    {},
+  );
+
+export const applyArtifact = async (artifactId: string, file: File): Promise<ApplyResult> => {
+  const baseUrl = await getBaseUrl();
+  const data = new FormData();
+  data.append("file", file);
+  const response = await fetch(`${baseUrl}/artifacts/${encodeURIComponent(artifactId)}/infer`, {
+    body: data,
+    method: "POST",
+  });
+  return parseResponse<ApplyResult>(response);
+};
+
+export const listReleases = async (taskId: string): Promise<CapabilityRelease[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/releases`, "GET");
+
+export const createRelease = async (artifactId: string): Promise<CapabilityRelease> =>
+  jsonRequest("/releases", "POST", { artifact_id: artifactId });
+
+export const releaseArchiveUrl = async (releaseId: string): Promise<string> => {
+  const baseUrl = await getBaseUrl();
+  return `${baseUrl}/releases/${encodeURIComponent(releaseId)}/archive`;
 };

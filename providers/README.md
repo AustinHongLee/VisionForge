@@ -1,7 +1,5 @@
-# providers/ — Vision Provider adapters（Codex 地盤）
+# providers
 
-每個 Provider 一個子套件，實作核心契約（`visionforge_core.contracts`）並通過 Conformance Suite（PR5）後才可註冊。
+目前包含兩個 Teacher adapter：確定性的本機 fixture，以及 OpenAI 雲端 vision adapter。兩者只實作 core 的窄 VisionProvider 契約，Provider 之間不互相依賴。
 
-規則：可以 import `visionforge_core`（實作契約），**core 永不 import 這裡**（D1，CI 強制）。Provider 之間不得互相 import（PR8）。
-
-目前無內容——等規格票。
+Fixture 只允許明示 Developer Mode／測試。正式設定缺失或錯誤時 API 失敗，不會悄悄回假框；雲端 Teacher 在 Project 尚未同意前也會被 API 拒絕。

@@ -11,6 +11,7 @@ from PIL import Image
 from visionforge_app.api import create_app
 from visionforge_app.export import export_dataset
 from visionforge_core.storage import create_project
+from visionforge_providers import FixtureProvider
 
 NOW = datetime(2026, 7, 9, 11, 0, 0, tzinfo=timezone.utc)
 VERSION_A = "0000000000000000000000000A"
@@ -28,7 +29,7 @@ def project(tmp_path: Path):
 
 @pytest.fixture()
 def client(project) -> TestClient:
-    return TestClient(create_app(project))
+    return TestClient(create_app(project, FixtureProvider()))
 
 
 def _jpeg_bytes(size: tuple[int, int] = (16, 10)) -> bytes:
@@ -59,8 +60,6 @@ def _reviewed_media(client: TestClient) -> str:
             "/review/approve",
             json={
                 "claim_id": item["claim"]["claim_id"],
-                "run_ref": item["run_ref"],
-                "media_hash": item["media_hash"],
                 "reviewer": "alice",
             },
         )

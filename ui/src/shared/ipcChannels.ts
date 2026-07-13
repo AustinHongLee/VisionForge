@@ -5,4 +5,6 @@ export const BRIDGE_CHANNELS = {
   getAppVersion: "bridge:get-app-version",
   getPlatform: "bridge:get-platform",
   getApiBaseUrl: "bridge:get-api-base-url",
+  getProjectPath: "bridge:get-project-path",
+  switchProject: "bridge:switch-project",
 } as const;

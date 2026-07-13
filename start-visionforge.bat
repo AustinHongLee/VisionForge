@@ -55,7 +55,7 @@ if errorlevel 1 (
   )
   echo     uv not found; using existing .venv
 ) else (
-  uv sync
+  uv sync --all-extras
   if errorlevel 1 (
     echo     [ERROR] uv sync failed.
     goto fail
@@ -67,7 +67,7 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 echo [4/8] Verifying Python imports...
-".venv\Scripts\python.exe" -c "import visionforge_app.api, visionforge_providers, openai" >nul 2>&1
+".venv\Scripts\python.exe" -c "import numpy, openai, torch, visionforge_app.api, visionforge_providers" >nul 2>&1
 if errorlevel 1 (
   echo     [ERROR] Python deps are incomplete. Try deleting .venv and rerun this file.
   goto fail
@@ -75,10 +75,9 @@ if errorlevel 1 (
 echo     OK
 
 echo [5/8] Preparing local runtime paths...
-if not exist "_devproj" mkdir "_devproj" >nul 2>&1
 set "VISIONFORGE_PYTHON=%CD%\.venv\Scripts\python.exe"
-set "VISIONFORGE_PROJECT=%CD%\_devproj"
-echo     VISIONFORGE_PROJECT=%VISIONFORGE_PROJECT%
+set "VISIONFORGE_PROJECT="
+echo     Project is selected in the app; the last healthy Project will reopen
 echo     VISIONFORGE_PYTHON=%VISIONFORGE_PYTHON%
 
 if exist "provider-config.json" (
@@ -86,7 +85,8 @@ if exist "provider-config.json" (
   echo     provider config: !VISIONFORGE_PROVIDER_CONFIG!
 ) else (
   set "VISIONFORGE_PROVIDER_CONFIG="
-  echo     provider config: not found; fixture provider will be used
+  set "VISIONFORGE_DEV_FIXTURE=1"
+  echo     provider config: not found; Developer Mode fixture explicitly enabled
 )
 
 echo [6/8] Checking provider-config safety...
@@ -123,6 +123,11 @@ if not exist "ui\node_modules\electron\dist\electron.exe" (
   echo     Electron binary missing; rebuilding electron package...
   call :pnpm --dir .\ui rebuild electron
   if errorlevel 1 goto fail
+  if not exist "ui\node_modules\electron\dist\electron.exe" (
+    echo     pnpm rebuild did not run the Electron installer; invoking its local installer...
+    node "ui\node_modules\electron\install.js"
+    if errorlevel 1 goto fail
+  )
 )
 if not exist "ui\node_modules\electron\dist\electron.exe" (
   echo     [ERROR] Electron binary is still missing after rebuild.
@@ -151,8 +156,10 @@ if not "%EXIT_CODE%"=="0" (
 goto success
 
 :pnpm
-set "BUNDLED_PNPM=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\pnpm.cmd"
+set "BUNDLED_NODE=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin"
+set "BUNDLED_PNPM=%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd"
 if exist "%BUNDLED_PNPM%" (
+  if exist "%BUNDLED_NODE%\node.exe" set "PATH=%BUNDLED_NODE%;%PATH%"
   call "%BUNDLED_PNPM%" %*
   exit /b %ERRORLEVEL%
 )

@@ -114,8 +114,156 @@ CREATE TABLE calibrations(
 );
 """
 
+_V0004 = """
+CREATE TABLE tasks(
+    task_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE TABLE concepts(
+    concept_id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    display_name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(task_id, display_name)
+);
+CREATE INDEX idx_concepts_task ON concepts(task_id);
+CREATE TABLE media_assignments(
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    media_hash TEXT NOT NULL REFERENCES media(media_hash),
+    source_group_id TEXT NOT NULL,
+    assigned_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    PRIMARY KEY(task_id, media_hash)
+);
+CREATE INDEX idx_assignments_group ON media_assignments(task_id, source_group_id);
+CREATE TABLE coverage(
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    media_hash TEXT NOT NULL REFERENCES media(media_hash),
+    concept_id TEXT NOT NULL REFERENCES concepts(concept_id),
+    state TEXT NOT NULL,
+    json TEXT NOT NULL,
+    PRIMARY KEY(task_id, media_hash, concept_id)
+);
+CREATE INDEX idx_coverage_task_state ON coverage(task_id, state);
+CREATE TABLE annotation_revisions(
+    revision_id TEXT PRIMARY KEY,
+    annotation_id TEXT NOT NULL,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    media_hash TEXT NOT NULL REFERENCES media(media_hash),
+    concept_id TEXT NOT NULL REFERENCES concepts(concept_id),
+    created_at TEXT NOT NULL,
+    status TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_annotations_scope ON annotation_revisions(task_id, media_hash, concept_id);
+CREATE INDEX idx_annotations_identity ON annotation_revisions(annotation_id, created_at);
+CREATE TABLE claim_teaching_context(
+    claim_id TEXT PRIMARY KEY REFERENCES claims(claim_id),
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    concept_id TEXT NOT NULL REFERENCES concepts(concept_id),
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_claim_context_scope ON claim_teaching_context(task_id, concept_id);
+"""
+
+_V0005 = """
+CREATE TABLE teaching_dataset_versions(
+    dataset_version_id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    version_number INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(task_id, version_number)
+);
+CREATE INDEX idx_teaching_datasets_task ON teaching_dataset_versions(task_id, version_number);
+CREATE TABLE training_runs(
+    training_run_id TEXT PRIMARY KEY,
+    dataset_version_id TEXT NOT NULL REFERENCES teaching_dataset_versions(dataset_version_id),
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_training_runs_dataset ON training_runs(dataset_version_id, created_at);
+CREATE TABLE training_run_events(
+    event_id TEXT PRIMARY KEY,
+    training_run_id TEXT NOT NULL REFERENCES training_runs(training_run_id),
+    status TEXT NOT NULL,
+    at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_training_events_run ON training_run_events(training_run_id, at, event_id);
+CREATE TABLE model_artifacts(
+    artifact_id TEXT PRIMARY KEY,
+    artifact_hash TEXT NOT NULL,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    dataset_version_id TEXT NOT NULL REFERENCES teaching_dataset_versions(dataset_version_id),
+    training_run_id TEXT NOT NULL REFERENCES training_runs(training_run_id),
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_artifacts_task ON model_artifacts(task_id, created_at);
+CREATE INDEX idx_artifacts_run ON model_artifacts(training_run_id);
+CREATE TABLE evaluation_reports(
+    evaluation_id TEXT PRIMARY KEY,
+    artifact_id TEXT NOT NULL REFERENCES model_artifacts(artifact_id),
+    dataset_version_id TEXT NOT NULL REFERENCES teaching_dataset_versions(dataset_version_id),
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+CREATE INDEX idx_evaluations_artifact ON evaluation_reports(artifact_id, created_at);
+"""
+
+_V0006 = """
+CREATE TABLE evaluation_feedback(
+    feedback_id TEXT PRIMARY KEY,
+    evaluation_id TEXT NOT NULL REFERENCES evaluation_reports(evaluation_id),
+    artifact_id TEXT NOT NULL REFERENCES model_artifacts(artifact_id),
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    media_hash TEXT NOT NULL REFERENCES media(media_hash),
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(evaluation_id, media_hash)
+);
+CREATE INDEX idx_feedback_task_media ON evaluation_feedback(task_id, media_hash);
+"""
+
+_V0007 = """
+CREATE TABLE capability_releases(
+    release_id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    version_number INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(task_id, version_number)
+);
+CREATE INDEX idx_releases_task ON capability_releases(task_id, version_number);
+"""
+
+_V0008 = """
+CREATE TABLE teacher_consents(
+    consent_id TEXT PRIMARY KEY,
+    provider_id TEXT NOT NULL,
+    provider_version TEXT NOT NULL,
+    granted_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(provider_id, provider_version)
+);
+"""
+
 # 遷移只增不改：新版本＝追加項目（D9：任何歷史專案永遠打得開）。
-MIGRATIONS: tuple[tuple[int, str], ...] = ((1, _V0001), (2, _V0002), (3, _V0003))
+MIGRATIONS: tuple[tuple[int, str], ...] = (
+    (1, _V0001),
+    (2, _V0002),
+    (3, _V0003),
+    (4, _V0004),
+    (5, _V0005),
+    (6, _V0006),
+    (7, _V0007),
+    (8, _V0008),
+)
 MAX_SCHEMA = MIGRATIONS[-1][0]
 
 
@@ -124,6 +272,7 @@ class Database:
 
     def __init__(self, conn: sqlite3.Connection) -> None:
         self._conn = conn
+        self._savepoint_counter = 0
 
     @classmethod
     def open(cls, db_path: Path) -> Database:
@@ -142,6 +291,19 @@ class Database:
     @contextmanager
     def transaction(self) -> Iterator[None]:
         """明確交易：整批成功或整批不存在（D5 版本化交易的基座）。"""
+        if self._conn.in_transaction:
+            self._savepoint_counter += 1
+            name = f"visionforge_sp_{self._savepoint_counter}"
+            self._conn.execute(f"SAVEPOINT {name}")
+            try:
+                yield
+            except BaseException:
+                self._conn.execute(f"ROLLBACK TO {name}")
+                self._conn.execute(f"RELEASE {name}")
+                raise
+            self._conn.execute(f"RELEASE {name}")
+            return
+
         self._conn.execute("BEGIN IMMEDIATE")
         try:
             yield

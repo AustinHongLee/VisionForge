@@ -15,16 +15,29 @@ from visionforge_core.storage.database import MAX_SCHEMA, Database
 from visionforge_core.storage.errors import NotAProjectError
 from visionforge_core.storage.media_store import MediaBlobStore
 from visionforge_core.storage.repositories import (
+    AnnotationRepository,
     CalibrationRepository,
+    CapabilityReleaseRepository,
+    ClaimTeachingContextRepository,
+    ConceptRepository,
     CostRepository,
+    CoverageRepository,
+    DatasetVersionRepository,
     DecisionRepository,
+    EvaluationFeedbackRepository,
+    EvaluationRepository,
     GoldenRepository,
     LabelRepository,
     ManifestRepository,
+    MediaAssignmentRepository,
     MediaRepository,
+    ModelArtifactRepository,
     ReviewEventRepository,
     RunRepository,
+    TaskRepository,
     TaxonomyRepository,
+    TeacherConsentRepository,
+    TrainingRunRepository,
 )
 
 MARKER = "project.json"
@@ -38,6 +51,19 @@ class Project:
         self.db = db
         self.blobs = MediaBlobStore(root / "media" / "blobs")
         self.media = MediaRepository(db)
+        self.tasks = TaskRepository(db)
+        self.concepts = ConceptRepository(db)
+        self.assignments = MediaAssignmentRepository(db)
+        self.coverage = CoverageRepository(db)
+        self.annotations = AnnotationRepository(db)
+        self.claim_teaching_context = ClaimTeachingContextRepository(db)
+        self.teacher_consents = TeacherConsentRepository(db)
+        self.dataset_versions = DatasetVersionRepository(db)
+        self.training_runs = TrainingRunRepository(db)
+        self.model_artifacts = ModelArtifactRepository(db)
+        self.evaluations = EvaluationRepository(db)
+        self.evaluation_feedback = EvaluationFeedbackRepository(db)
+        self.capability_releases = CapabilityReleaseRepository(db)
         self.runs = RunRepository(db)
         self.labels = LabelRepository(db)
         self.decisions = DecisionRepository(db)
@@ -50,6 +76,12 @@ class Project:
 
     def close(self) -> None:
         self.db.close()
+
+    def __enter__(self) -> Project:
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self.close()
 
 
 def create_project(root: Path, name: str, project_id: str) -> Project:

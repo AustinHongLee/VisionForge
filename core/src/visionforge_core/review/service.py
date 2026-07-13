@@ -22,6 +22,7 @@ from visionforge_core.contracts import (
 )
 from visionforge_core.contracts.claims import Geometry
 from visionforge_core.storage import Project
+from visionforge_core.storage.errors import ConflictError
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,15 @@ def _mapped_concept(
     )
 
 
+def _authoritative_item(project: Project, item: ClaimForReview) -> ClaimForReview:
+    claim, run_ref, media_hash = project.runs.get_claim_context(item.claim.claim_id)
+    if item.run_ref != run_ref or item.media_hash != media_hash or item.claim != claim:
+        raise ConflictError("Claim 的 run／media 關聯與持久化資料不一致")
+    if project.review_events.iter_by_claim(claim.claim_id):
+        raise ConflictError(f"claim {claim.claim_id} 已有終局審核結果")
+    return ClaimForReview(claim=claim, run_ref=run_ref, media_hash=media_hash)
+
+
 def approve(
     project: Project,
     item: ClaimForReview,
@@ -66,37 +76,39 @@ def approve(
 
     傳 final_geometry 或 final_concept_raw_text 之一即視為 edited_approved。
     """
-    edited = final_geometry is not None or final_concept_raw_text is not None
-    geometry = final_geometry if final_geometry is not None else item.claim.geometry
-    raw_text = final_concept_raw_text or item.claim.concept.raw_text
-    concept = _mapped_concept(
-        project, raw_text, node_id=node_id, reviewer=reviewer, now=reviewed_at
-    )
-    source_status = "edited_approved" if edited else "approved"
-    label = Label(
-        label_id=label_id,
-        claim_ref=item.claim.claim_id,
-        run_ref=item.run_ref,
-        media_hash=item.media_hash,
-        assertion=item.claim.assertion,
-        final_geometry=geometry,
-        final_concept=concept,
-        reviewer=reviewer,
-        reviewed_at=reviewed_at,
-        source_status=source_status,
-    )
-    to_status = ReviewStatus.edited_approved if edited else ReviewStatus.approved
-    event = ReviewEvent(
-        event_id=event_id,
-        at=reviewed_at,
-        actor=reviewer,
-        claim_ref=item.claim.claim_id,
-        from_status=item.claim.review.status,
-        to_status=to_status,
-        label_ref=label_id,
-    )
-    project.labels.append(label)
-    project.review_events.append(event)
+    with project.db.transaction():
+        item = _authoritative_item(project, item)
+        edited = final_geometry is not None or final_concept_raw_text is not None
+        geometry = final_geometry if final_geometry is not None else item.claim.geometry
+        raw_text = final_concept_raw_text or item.claim.concept.raw_text
+        concept = _mapped_concept(
+            project, raw_text, node_id=node_id, reviewer=reviewer, now=reviewed_at
+        )
+        source_status = "edited_approved" if edited else "approved"
+        label = Label(
+            label_id=label_id,
+            claim_ref=item.claim.claim_id,
+            run_ref=item.run_ref,
+            media_hash=item.media_hash,
+            assertion=item.claim.assertion,
+            final_geometry=geometry,
+            final_concept=concept,
+            reviewer=reviewer,
+            reviewed_at=reviewed_at,
+            source_status=source_status,
+        )
+        to_status = ReviewStatus.edited_approved if edited else ReviewStatus.approved
+        event = ReviewEvent(
+            event_id=event_id,
+            at=reviewed_at,
+            actor=reviewer,
+            claim_ref=item.claim.claim_id,
+            from_status=item.claim.review.status,
+            to_status=to_status,
+            label_ref=label_id,
+        )
+        project.labels.append(label)
+        project.review_events.append(event)
     return label
 
 
@@ -109,13 +121,15 @@ def reject(
     event_id: str,
 ) -> ReviewEvent:
     """否決：只產 ReviewEvent（不產 Label，契約不變量已擋）。"""
-    event = ReviewEvent(
-        event_id=event_id,
-        at=reviewed_at,
-        actor=reviewer,
-        claim_ref=item.claim.claim_id,
-        from_status=item.claim.review.status,
-        to_status=ReviewStatus.rejected,
-    )
-    project.review_events.append(event)
+    with project.db.transaction():
+        item = _authoritative_item(project, item)
+        event = ReviewEvent(
+            event_id=event_id,
+            at=reviewed_at,
+            actor=reviewer,
+            claim_ref=item.claim.claim_id,
+            from_status=item.claim.review.status,
+            to_status=ReviewStatus.rejected,
+        )
+        project.review_events.append(event)
     return event

@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 
+import pytest
 from visionforge_core.contracts import (
     BBox,
     Claim,
@@ -11,7 +12,7 @@ from visionforge_core.contracts import (
     Producer,
 )
 from visionforge_core.orchestrator import record_inference_run
-from visionforge_core.storage import create_project
+from visionforge_core.storage import NotFoundError, create_project
 
 NOW = datetime(2026, 7, 8, 12, 0, 0, tzinfo=timezone.utc)
 
@@ -86,3 +87,23 @@ def test_deterministic_same_inputs(tmp_path):
     finally:
         a.close()
         b.close()
+
+
+def test_record_inference_run_rolls_back_every_ledger_on_failure(tmp_path, monkeypatch):
+    proj = create_project(tmp_path / "p", "q", ulid(1))
+
+    def fail_outcome(_outcome):
+        raise RuntimeError("injected outcome failure")
+
+    monkeypatch.setattr(proj.decisions, "append_outcome", fail_outcome)
+    try:
+        with pytest.raises(RuntimeError, match="injected outcome failure"):
+            record(proj)
+
+        with pytest.raises(NotFoundError):
+            proj.decisions.get(ulid(20))
+        with pytest.raises(NotFoundError):
+            proj.runs.get(ulid(10))
+        assert proj.costs.iter_by_subject("run", ulid(10)) == []
+    finally:
+        proj.close()

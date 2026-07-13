@@ -1,33 +1,63 @@
-# VisionForge（開發代號：GoodYolo）
+# VisionForge
 
-> **把大模型的理解力，鑄造成你自己的視覺能力。**
-> 老師模型先看懂（zero-shot 草稿）→ 人審治理（血統／黃金集／閘門）→ 蒸餾成可部署的學生模型（YOLO 等）→ 接上應用。
+> 把大型通用模型的理解草稿，鑄造成使用者自己可驗證、可攜的專用視覺能力。
 
-## 文件
+VisionForge 目前完成 First Forge 的 detect 垂直路徑：建立／開啟 Project、教 A、修正框與 Coverage、凍結 DatasetVersion、在 child process 訓練本地學生模型、查看 validation 證據、拿新圖試跑、匯出不依賴 Studio 的 CapabilityRelease，再加入 B 而不改寫 v1。
 
-**一切從 [docs/README.md](docs/README.md) 開始**——那裡有效力層級、狀態板與全部文件的登記表。
+現行產品基準是 [重構開工書 R3](docs/03-規劃/VisionForge_重構開工書_R3.md)，實作與驗證真相看 [EXECUTION](docs/03-規劃/EXECUTION.md)。文件索引在 [docs/README.md](docs/README.md)。
 
-最高效力文件：[VisionForge Constitution v1.0](docs/00-法規/VisionForge_Constitution_v1.0.md)（79 條）。
-協作規範：[AI 分工協議](docs/00-法規/VisionForge_AI分工協議_v1.md)（Architect × Builder）。
-接任者必讀：[交接手冊](docs/交接手冊.md)。
+## 現在能做
 
-## 目前狀態
+- 一個自包含資料夾代表一項視覺能力；UI 可建立、開啟並記住最近一次 Project。
+- 建立 detect Task 與穩定 Concept A／B；每張圖每個 Concept 明確區分 `unverified`、`verified_complete`、`verified_absent`。
+- 讓本機或雲端 Teacher 提框，再由使用者移動、縮放、刪除、補框、改類別；修訂與 tombstone 均保留。
+- 雲端 Teacher 送出前顯示媒體與 Concept，並保存 Project＋Provider version 級同意；未同意時 API 也拒絕外送。
+- 建立不可變 DatasetVersion，以 content hash／`source_group_id` 隔離 train 與 validation。
+- 使用不含預訓練權重的本地 PyTorch provisional detector 訓練；取消、失敗、中斷不會冒充 Artifact。
+- 查看 EvaluationReport、把錯誤送回教學、對未入庫圖片執行 ModelArtifact。
+- 匯出含 manifest、鎖定依賴、runner、I/O Schema、license inventory 與 parity fixture 的 ZIP；runner 不讀 Project DB。
+- 加入 B 時舊媒體維持 `unverified`，Dataset／Artifact／Release v1 不被覆寫，可另發 v2。
 
-| 階段 | 狀態 |
-|---|---|
-| 文件工程（R1 → R2 → 憲法 → 分工協議 → 文件治理） | ✅ 完成 |
-| 契約層：Claim Schema（ADR-0003）＋帳本 Schema（ADR-0004） | ✅ 完成 |
-| 儲存層（ADR-0005，core 49 測試綠、ruff 乾淨） | ✅ 完成 |
-| UI 殼＋安全加固（票-0001/0002，已合併） | ✅ 完成 |
-| 架構代理交接（Fable 5 → Opus 4.8，見交接手冊） | ✅ 完成 |
-| **M0 資料工房核心迴圈**（匯入→看懂→整理審核→校準→匯出 YOLO/COCO） | ✅ 完整可出貨（票-0003~0016，ADR-0006~0010；core 89/app 59+/ui 25 測試綠） |
-| 契約→JSON Schema→TS 生成＋雙向漂移守門（票-0004） | ✅ 已合併 |
-| 試鏡與校準引擎（kernel，統計不外包，R2 9.2） | ✅ 已合併（ad3914c，PR #4） |
-| **第一個真實老師**（OpenAI 雲端 VLM，ADR-0008） | ✅ 已合併（2f52b2e，PR #24）；實機對真圖畫框成功 |
-| 一鍵啟動器 `start-visionforge.bat` | ✅ 已納管（6efd815，PR #25） |
+## 目前不能宣稱
 
-## 給 AI Agent 的入場須知
+- Tiny detector 是可重現的第一個 Trainer，不是通用高品質模型；實際準確度要用你的 unseen 圖片判斷。
+- 不支援 PDF、影片、攝影機、BOM／OCR／管線拓撲或工程圖 Domain Pack。
+- 沒有通用 DAG、獨立 Runtime、Plugin Marketplace、多人權限、雲端訓練或多 GPU。
+- 本輪沒有可散布的 Studio installer；使用 repo 的 Windows dev launcher。
+- 自動測試與 clean runner parity 已通過，但真實圖片／真實 OpenAI 帳號的最終產品體驗仍需人類實機走查，不能用測試數量冒充品質認證。
 
-1. 先讀 `docs/00-法規/` 全部內容（憲法 D20，無例外），接任 Architect 者再讀 `docs/交接手冊.md`。
-2. 任何提交說明必須聲明觸及的憲法條文與合規性。
-3. 🟨🟦⬛ 狀態的文件不得作為依據；分工協議的紅線由 CI 強制。
+## Windows 開發啟動
+
+需求：Python 3.12、Git，以及 Node／pnpm 11.7。Codex Desktop 內建 runtime 也可供 launcher 使用。
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python -m pip install -U pip
+.\.venv\Scripts\python -m pip install -e core -e providers -e "app[training]" pytest ruff
+pnpm --dir ui install
+.\start-visionforge.bat --check
+.\start-visionforge.bat
+```
+
+Launcher 是明示的 Developer Mode：若 repo 根目錄沒有被 Git 忽略的 `provider-config.json`，它會清楚啟用 fixture，不會把 fixture 假框偽裝成真 Teacher。OpenAI 設定格式：
+
+```json
+{
+  "provider": "openai",
+  "model": "gpt-5-mini",
+  "openai_api_key": "replace-locally"
+}
+```
+
+金鑰檔不得提交。啟動後在頁首選擇空資料夾以建立 Project，或選擇含 `project.json` 的既有 Project。
+
+## 驗證
+
+```powershell
+.\.venv\Scripts\python -m pytest
+.\.venv\Scripts\python -m ruff check core app providers
+pnpm --dir ui test -- --run
+pnpm --dir ui build
+```
+
+CapabilityRelease 的 clean-environment parity 與目前已知限制記錄於 [EXECUTION](docs/03-規劃/EXECUTION.md)。

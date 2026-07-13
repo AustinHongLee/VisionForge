@@ -1,5 +1,121 @@
 {
   "$defs": {
+    "AnnotationRevision": {
+      "additionalProperties": false,
+      "description": "標註的不可變修訂；刪除是 retracted revision，不抹去舊資料。",
+      "properties": {
+        "annotation_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Annotation Id",
+          "type": "string"
+        },
+        "bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBox"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "created_by": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Created By",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "replaces_revision_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Replaces Revision Id"
+        },
+        "revision_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Revision Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "manual",
+            "teacher_accepted",
+            "teacher_edited",
+            "imported"
+          ],
+          "title": "AnnotationSource",
+          "type": "string"
+        },
+        "source_claim_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Claim Ref"
+        },
+        "status": {
+          "default": "active",
+          "enum": [
+            "active",
+            "retracted"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision_id",
+        "annotation_id",
+        "task_id",
+        "concept_id",
+        "media_hash",
+        "bbox",
+        "source",
+        "created_by",
+        "created_at"
+      ],
+      "title": "AnnotationRevision",
+      "type": "object"
+    },
     "BBox": {
       "additionalProperties": false,
       "properties": {
@@ -197,6 +313,87 @@
       "title": "CandidateProvider",
       "type": "object"
     },
+    "CapabilityRelease": {
+      "additionalProperties": false,
+      "properties": {
+        "archive_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Archive Hash",
+          "type": "string"
+        },
+        "artifact_ids": {
+          "items": {
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Artifact Ids",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "manifest_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Manifest Hash",
+          "type": "string"
+        },
+        "parent_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Ref"
+        },
+        "relative_path": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "release_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "version_number": {
+          "minimum": 1,
+          "title": "Version Number",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "release_id",
+        "version_number",
+        "task_id",
+        "artifact_ids",
+        "archive_hash",
+        "manifest_hash",
+        "relative_path",
+        "created_at"
+      ],
+      "title": "CapabilityRelease",
+      "type": "object"
+    },
     "Claim": {
       "additionalProperties": false,
       "description": "單一實例的陳述。Claim 是有出處的意見，不是事實（憲法 §3）。",
@@ -274,6 +471,34 @@
       "title": "Claim",
       "type": "object"
     },
+    "ClaimTeachingContext": {
+      "additionalProperties": false,
+      "description": "把舊 Claim 的 provider 原話，可靠地綁回本次 Task/Concept。",
+      "properties": {
+        "claim_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_id",
+        "task_id",
+        "concept_id"
+      ],
+      "title": "ClaimTeachingContext",
+      "type": "object"
+    },
     "ClassCalibration": {
       "additionalProperties": false,
       "description": "逐類校準結果。none 級不輸出映射、退回保守全域門檻（R2 9.2）。",
@@ -332,6 +557,34 @@
       "title": "ClassCalibration",
       "type": "object"
     },
+    "ClassMapEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "class_index": {
+          "minimum": 0,
+          "title": "Class Index",
+          "type": "integer"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "concept_id",
+        "class_index",
+        "display_name"
+      ],
+      "title": "ClassMapEntry",
+      "type": "object"
+    },
     "Concept": {
       "additionalProperties": false,
       "properties": {
@@ -370,6 +623,55 @@
         "raw_text"
       ],
       "title": "Concept",
+      "type": "object"
+    },
+    "ConceptDefinition": {
+      "additionalProperties": false,
+      "description": "概念身分只在所屬 Task 內有意義，不再使用全專案隱式類別表。",
+      "properties": {
+        "aliases": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "concept_id",
+        "task_id",
+        "display_name",
+        "created_at"
+      ],
+      "title": "ConceptDefinition",
       "type": "object"
     },
     "ConceptMappingProvenance": {
@@ -592,6 +894,282 @@
         "amount"
       ],
       "title": "CostMeasurement",
+      "type": "object"
+    },
+    "CoverageRecord": {
+      "additionalProperties": false,
+      "description": "一張圖對一個 Concept 的查核狀態；absence 的唯一權威來源。",
+      "properties": {
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "reviewer": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewer"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "unverified",
+            "verified_complete",
+            "verified_absent"
+          ],
+          "title": "CoverageState",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "verified_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verified At"
+        }
+      },
+      "required": [
+        "task_id",
+        "media_hash",
+        "concept_id"
+      ],
+      "title": "CoverageRecord",
+      "type": "object"
+    },
+    "CoverageSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "verified_complete",
+            "verified_absent"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "concept_id",
+        "state"
+      ],
+      "title": "CoverageSnapshot",
+      "type": "object"
+    },
+    "DatasetAnnotation": {
+      "additionalProperties": false,
+      "properties": {
+        "annotation_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Annotation Id",
+          "type": "string"
+        },
+        "bbox": {
+          "$ref": "#/$defs/BBox"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "revision_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Revision Id",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "manual",
+            "teacher_accepted",
+            "teacher_edited",
+            "imported"
+          ],
+          "title": "AnnotationSource",
+          "type": "string"
+        },
+        "source_claim_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Claim Ref"
+        }
+      },
+      "required": [
+        "annotation_id",
+        "revision_id",
+        "concept_id",
+        "bbox",
+        "source"
+      ],
+      "title": "DatasetAnnotation",
+      "type": "object"
+    },
+    "DatasetItem": {
+      "additionalProperties": false,
+      "properties": {
+        "annotations": {
+          "items": {
+            "$ref": "#/$defs/DatasetAnnotation"
+          },
+          "title": "Annotations",
+          "type": "array"
+        },
+        "coverage": {
+          "items": {
+            "$ref": "#/$defs/CoverageSnapshot"
+          },
+          "title": "Coverage",
+          "type": "array"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "source_group_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Source Group Id",
+          "type": "string"
+        },
+        "split": {
+          "enum": [
+            "train",
+            "validation"
+          ],
+          "title": "Split",
+          "type": "string"
+        }
+      },
+      "required": [
+        "media_hash",
+        "source_group_id",
+        "split",
+        "coverage",
+        "annotations"
+      ],
+      "title": "DatasetItem",
+      "type": "object"
+    },
+    "DatasetVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "class_map": {
+          "items": {
+            "$ref": "#/$defs/ClassMapEntry"
+          },
+          "minItems": 1,
+          "title": "Class Map",
+          "type": "array"
+        },
+        "concept_ids": {
+          "items": {
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Concept Ids",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_version_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Dataset Version Id",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/DatasetItem"
+          },
+          "minItems": 2,
+          "title": "Items",
+          "type": "array"
+        },
+        "parent_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Ref"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "version_number": {
+          "minimum": 1,
+          "title": "Version Number",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "dataset_version_id",
+        "version_number",
+        "task_id",
+        "concept_ids",
+        "class_map",
+        "items",
+        "created_at"
+      ],
+      "title": "DatasetVersion",
       "type": "object"
     },
     "DatasetVersionManifest": {
@@ -844,6 +1422,216 @@
         "choice"
       ],
       "title": "DecisionRecord",
+      "type": "object"
+    },
+    "EvaluationError": {
+      "additionalProperties": false,
+      "properties": {
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "expected_bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBox"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "kind": {
+          "enum": [
+            "missed",
+            "false_positive",
+            "localization",
+            "classification"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "predicted_bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BBox"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "media_hash",
+        "kind",
+        "concept_id"
+      ],
+      "title": "EvaluationError",
+      "type": "object"
+    },
+    "EvaluationFeedback": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "evaluation_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "feedback_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Feedback Id",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "feedback_id",
+        "evaluation_id",
+        "artifact_id",
+        "task_id",
+        "media_hash",
+        "concept_id",
+        "created_at"
+      ],
+      "title": "EvaluationFeedback",
+      "type": "object"
+    },
+    "EvaluationMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "precision",
+            "recall",
+            "mean_iou"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "EvaluationMetric",
+      "type": "object"
+    },
+    "EvaluationReport": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_version_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Dataset Version Id",
+          "type": "string"
+        },
+        "errors": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EvaluationError"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "evaluation_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Evaluation Id",
+          "type": "string"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/EvaluationMetric"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "validation_media_hashes": {
+          "items": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Validation Media Hashes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evaluation_id",
+        "artifact_id",
+        "dataset_version_id",
+        "validation_media_hashes",
+        "metrics",
+        "created_at"
+      ],
+      "title": "EvaluationReport",
       "type": "object"
     },
     "GoldenSetEntry": {
@@ -1262,6 +2050,46 @@
       "title": "MaskRef",
       "type": "object"
     },
+    "MediaAssignment": {
+      "additionalProperties": false,
+      "properties": {
+        "assigned_at": {
+          "format": "date-time",
+          "title": "Assigned At",
+          "type": "string"
+        },
+        "media_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Media Hash",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "source_group_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Source Group Id",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "media_hash",
+        "source_group_id",
+        "assigned_at"
+      ],
+      "title": "MediaAssignment",
+      "type": "object"
+    },
     "MediaRecord": {
       "additionalProperties": false,
       "properties": {
@@ -1389,6 +2217,119 @@
         "height_px"
       ],
       "title": "MediaSubject",
+      "type": "object"
+    },
+    "ModelArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Artifact Hash",
+          "type": "string"
+        },
+        "artifact_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "class_map": {
+          "items": {
+            "$ref": "#/$defs/ClassMapEntry"
+          },
+          "title": "Class Map",
+          "type": "array"
+        },
+        "confidence_threshold": {
+          "default": 0.35,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence Threshold",
+          "type": "number"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_version_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Dataset Version Id",
+          "type": "string"
+        },
+        "input_size": {
+          "maximum": 2048,
+          "minimum": 64,
+          "title": "Input Size",
+          "type": "integer"
+        },
+        "relative_path": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "training_run_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Training Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "artifact_hash",
+        "task_id",
+        "dataset_version_id",
+        "training_run_id",
+        "relative_path",
+        "class_map",
+        "input_size",
+        "created_at"
+      ],
+      "title": "ModelArtifact",
+      "type": "object"
+    },
+    "ModelPrediction": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/BBox"
+        },
+        "concept_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Concept Id",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "display_name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "concept_id",
+        "display_name",
+        "bbox",
+        "confidence"
+      ],
+      "title": "ModelPrediction",
       "type": "object"
     },
     "Point": {
@@ -1632,6 +2573,78 @@
       "title": "ProviderCapability",
       "type": "object"
     },
+    "ReadinessIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "concept_id": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Concept Id"
+        },
+        "media_hash": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Media Hash"
+        },
+        "message": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ReadinessIssue",
+      "type": "object"
+    },
+    "ReadinessReport": {
+      "additionalProperties": false,
+      "properties": {
+        "blockers": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReadinessIssue"
+          },
+          "title": "Blockers",
+          "type": "array"
+        },
+        "warnings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReadinessIssue"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "title": "ReadinessReport",
+      "type": "object"
+    },
     "Review": {
       "additionalProperties": false,
       "properties": {
@@ -1783,6 +2796,46 @@
       "title": "ReviewEvent",
       "type": "object"
     },
+    "TaskRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "kind": {
+          "const": "detect",
+          "default": "detect",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "name",
+        "created_at"
+      ],
+      "title": "TaskRecord",
+      "type": "object"
+    },
     "TaxonomyNode": {
       "additionalProperties": false,
       "description": "專案 Taxonomy 的一個節點；概念的權威身分。",
@@ -1816,6 +2869,238 @@
         "created_at"
       ],
       "title": "TaxonomyNode",
+      "type": "object"
+    },
+    "TeacherConsent": {
+      "additionalProperties": false,
+      "description": "Project 對特定雲端教師版本的明確、可稽核同意。",
+      "properties": {
+        "consent_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Consent Id",
+          "type": "string"
+        },
+        "granted_at": {
+          "format": "date-time",
+          "title": "Granted At",
+          "type": "string"
+        },
+        "granted_by": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Granted By",
+          "type": "string"
+        },
+        "media_scope": {
+          "const": "selected_image_only",
+          "default": "selected_image_only",
+          "title": "Media Scope",
+          "type": "string"
+        },
+        "provider_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "provider_version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Provider Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "consent_id",
+        "provider_id",
+        "provider_version",
+        "granted_by",
+        "granted_at"
+      ],
+      "title": "TeacherConsent",
+      "type": "object"
+    },
+    "TrainingRecipe": {
+      "additionalProperties": false,
+      "properties": {
+        "batch_size": {
+          "default": 4,
+          "maximum": 1024,
+          "minimum": 1,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "epochs": {
+          "default": 20,
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Epochs",
+          "type": "integer"
+        },
+        "input_size": {
+          "default": 256,
+          "maximum": 2048,
+          "minimum": 64,
+          "title": "Input Size",
+          "type": "integer"
+        },
+        "learning_rate": {
+          "default": 0.001,
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Learning Rate",
+          "type": "number"
+        },
+        "seed": {
+          "default": 1337,
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Seed",
+          "type": "integer"
+        }
+      },
+      "title": "TrainingRecipe",
+      "type": "object"
+    },
+    "TrainingRun": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "dataset_version_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Dataset Version Id",
+          "type": "string"
+        },
+        "recipe": {
+          "$ref": "#/$defs/TrainingRecipe"
+        },
+        "retry_of": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry Of"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "trainer_id": {
+          "const": "visionforge_tiny_detector",
+          "default": "visionforge_tiny_detector",
+          "title": "Trainer Id",
+          "type": "string"
+        },
+        "trainer_version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Trainer Version",
+          "type": "string"
+        },
+        "training_run_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Training Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "training_run_id",
+        "dataset_version_id",
+        "task_id",
+        "trainer_version",
+        "recipe",
+        "created_at"
+      ],
+      "title": "TrainingRun",
+      "type": "object"
+    },
+    "TrainingRunEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "message": {
+          "default": "",
+          "maxLength": 512,
+          "title": "Message",
+          "type": "string"
+        },
+        "progress": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Progress"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed",
+            "cancelled",
+            "interrupted"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "technical_detail": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Technical Detail",
+          "type": "string"
+        },
+        "training_run_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Training Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "training_run_id",
+        "status",
+        "at"
+      ],
+      "title": "TrainingRunEvent",
       "type": "object"
     },
     "UnknownGeometry": {

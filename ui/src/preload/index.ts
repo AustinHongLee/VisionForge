@@ -11,6 +11,8 @@ const bridge: DesktopBridge = {
   getAppVersion: () => ipcRenderer.invoke(BRIDGE_CHANNELS.getAppVersion),
   getPlatform: () => ipcRenderer.invoke(BRIDGE_CHANNELS.getPlatform),
   getApiBaseUrl: () => ipcRenderer.invoke(BRIDGE_CHANNELS.getApiBaseUrl),
+  getProjectPath: () => ipcRenderer.invoke(BRIDGE_CHANNELS.getProjectPath),
+  switchProject: (path) => ipcRenderer.invoke(BRIDGE_CHANNELS.switchProject, path),
 };
 
 contextBridge.exposeInMainWorld("bridge", bridge);

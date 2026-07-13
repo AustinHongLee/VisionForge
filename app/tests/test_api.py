@@ -10,6 +10,7 @@ from PIL import Image
 from visionforge_app.api import create_app
 from visionforge_core.contracts import Claim
 from visionforge_core.storage import create_project
+from visionforge_providers import FixtureProvider
 
 
 @pytest.fixture()
@@ -23,7 +24,7 @@ def project(tmp_path: Path):
 
 @pytest.fixture()
 def client(project) -> TestClient:
-    return TestClient(create_app(project))
+    return TestClient(create_app(project, FixtureProvider()))
 
 
 def _jpeg_bytes(size: tuple[int, int] = (16, 10)) -> bytes:
@@ -190,6 +191,114 @@ def test_process_unknown_media_returns_404(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_first_forge_teach_edit_verify_and_absent_flow(client: TestClient) -> None:
+    imported = _import_image(client)
+    task = client.post("/tasks", json={"name": "閥件偵測"}).json()
+    concept = client.post(
+        f"/tasks/{task['task_id']}/concepts",
+        json={"display_name": "Gate Valve", "aliases": ["gate valve"]},
+    ).json()
+
+    taught = client.post(
+        f"/tasks/{task['task_id']}/teach",
+        json={
+            "media_hash": imported["media_hash"],
+            "concept_ids": [concept["concept_id"]],
+            "source_group_id": "iso-sheet-001",
+        },
+    )
+    assert taught.status_code == 200
+    claim = taught.json()["claims"][0]
+    assert claim["concept"]["raw_text"] == "Gate Valve"
+
+    state = client.get(
+        f"/tasks/{task['task_id']}/media/{imported['media_hash']}/teaching"
+    ).json()
+    assert state["assignment"]["source_group_id"] == "iso-sheet-001"
+    assert state["coverage"][0]["state"] == "unverified"
+    assert state["teacher_claims"][0]["claim_id"] == claim["claim_id"]
+
+    accepted = client.post(
+        "/annotations",
+        json={
+            "task_id": task["task_id"],
+            "media_hash": imported["media_hash"],
+            "concept_id": concept["concept_id"],
+            "source_claim_ref": claim["claim_id"],
+        },
+    )
+    assert accepted.status_code == 200
+    annotation = accepted.json()
+    assert annotation["source"] == "teacher_accepted"
+
+    edited_bbox = {
+        "type": "bbox",
+        "x1": 0.2,
+        "y1": 0.2,
+        "x2": 0.6,
+        "y2": 0.7,
+    }
+    edited = client.patch(
+        f"/annotations/{annotation['annotation_id']}",
+        json={"concept_id": concept["concept_id"], "bbox": edited_bbox},
+    )
+    assert edited.status_code == 200
+    assert edited.json()["source"] == "teacher_edited"
+    assert edited.json()["replaces_revision_id"] == annotation["revision_id"]
+
+    complete = client.put(
+        "/coverage",
+        json={
+            "task_id": task["task_id"],
+            "media_hash": imported["media_hash"],
+            "concept_id": concept["concept_id"],
+            "state": "verified_complete",
+        },
+    )
+    assert complete.status_code == 200
+    assert complete.json()["reviewer"] == "local-user"
+
+    removed = client.delete(f"/annotations/{annotation['annotation_id']}")
+    assert removed.status_code == 200
+    assert removed.json()["status"] == "retracted"
+    absent = client.put(
+        "/coverage",
+        json={
+            "task_id": task["task_id"],
+            "media_hash": imported["media_hash"],
+            "concept_id": concept["concept_id"],
+            "state": "verified_absent",
+        },
+    )
+    assert absent.status_code == 200
+    assert absent.json()["state"] == "verified_absent"
+
+
+def test_complete_coverage_rejects_empty_annotations(client: TestClient) -> None:
+    imported = _import_image(client)
+    task = client.post("/tasks", json={"name": "物件偵測"}).json()
+    concept = client.post(
+        f"/tasks/{task['task_id']}/concepts", json={"display_name": "Valve"}
+    ).json()
+    assigned = client.post(
+        f"/tasks/{task['task_id']}/media/{imported['media_hash']}", json={}
+    )
+    assert assigned.status_code == 200
+
+    response = client.put(
+        "/coverage",
+        json={
+            "task_id": task["task_id"],
+            "media_hash": imported["media_hash"],
+            "concept_id": concept["concept_id"],
+            "state": "verified_complete",
+        },
+    )
+
+    assert response.status_code == 409
+    assert "沒有有效標註" in response.json()["detail"]["error"]
+
+
 def _process_image(client: TestClient, concepts: list[str] | None = None) -> dict:
     imported = _import_image(client)
     response = client.post(
@@ -226,8 +335,6 @@ def test_review_approve_returns_label_and_removes_pending_claim(
         "/review/approve",
         json={
             "claim_id": pending["claim"]["claim_id"],
-            "run_ref": pending["run_ref"],
-            "media_hash": pending["media_hash"],
             "reviewer": "alice",
         },
     )
@@ -249,8 +356,6 @@ def test_review_approve_with_geometry_edit_marks_edited(client: TestClient) -> N
         "/review/approve",
         json={
             "claim_id": pending["claim"]["claim_id"],
-            "run_ref": pending["run_ref"],
-            "media_hash": pending["media_hash"],
             "reviewer": "alice",
             "final_geometry": {"type": "bbox", "x1": 0.2, "y1": 0.2, "x2": 0.9, "y2": 0.9},
         },
@@ -270,8 +375,6 @@ def test_review_reject_removes_pending_without_label(client: TestClient, project
         "/review/reject",
         json={
             "claim_id": pending["claim"]["claim_id"],
-            "run_ref": pending["run_ref"],
-            "media_hash": pending["media_hash"],
             "reviewer": "alice",
         },
     )
@@ -284,6 +387,19 @@ def test_review_reject_removes_pending_without_label(client: TestClient, project
     assert project.labels.iter_by_media(pending["media_hash"]) == []
 
 
+def test_review_repeating_terminal_decision_returns_409(client: TestClient) -> None:
+    _process_image(client)
+    pending = client.get("/review/pending").json()[0]
+    payload = {"claim_id": pending["claim"]["claim_id"], "reviewer": "alice"}
+
+    first = client.post("/review/approve", json=payload)
+    repeated = client.post("/review/reject", json=payload)
+
+    assert first.status_code == 200
+    assert repeated.status_code == 409
+    assert repeated.json()["detail"]["error"] == "review_conflict"
+
+
 def test_golden_endpoint_registers_approved_label(client: TestClient) -> None:
     _process_image(client)
     pending = client.get("/review/pending").json()[0]
@@ -291,8 +407,6 @@ def test_golden_endpoint_registers_approved_label(client: TestClient) -> None:
         "/review/approve",
         json={
             "claim_id": pending["claim"]["claim_id"],
-            "run_ref": pending["run_ref"],
-            "media_hash": pending["media_hash"],
             "reviewer": "alice",
         },
     ).json()
@@ -331,8 +445,6 @@ def test_recalibrate_updates_infer_confidence(client: TestClient) -> None:
             "/review/approve",
             json={
                 "claim_id": item["claim"]["claim_id"],
-                "run_ref": item["run_ref"],
-                "media_hash": item["media_hash"],
                 "reviewer": "alice",
             },
         )
@@ -359,8 +471,6 @@ def test_review_and_golden_unknown_ids_return_404(client: TestClient) -> None:
         "/review/approve",
         json={
             "claim_id": "0000000000000000000000000A",
-            "run_ref": "0000000000000000000000000B",
-            "media_hash": "f" * 64,
             "reviewer": "alice",
         },
     )

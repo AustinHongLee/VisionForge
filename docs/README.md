@@ -4,17 +4,17 @@
 
 ---
 
-## 一、效力層級（衝突時，上位勝，下位牴觸部分無效）
+## 一、現行效力層級
 
 ```
-1. 00-法規／憲法          ← 最高法（修改唯有修憲程序）
-2. 00-法規／協議          ← 憲法之下的行為規範
-3. 02-ADR（狀態=已採納）   ← 具體架構決策，可引用為依據
-4. 03-規劃、04-評審        ← 設計素材，依各檔狀態判斷效力
-5. 05-討論                ← 無約束力，僅為思考過程
+1. Owner 最新明示方向
+2. VisionForge 重構開工書 R3  ← 現行產品、資料語意與 Agent 施工基準
+3. R3 明確保留的資料／安全原則
+4. 與 R3 不衝突的已採納 ADR 與實際程式契約
+5. 其餘文件                  ← 歷史證據或設計素材
 ```
 
-`01-定義` 是橫向的語彙基準：憲法級名詞的權威定義在憲法第三章，定義表是它的快速索引與擴充登記處。
+2026-07-13 前的憲法、AI 分工協議、R1／R2、規格票與交接手冊保留供考古，但不再阻擋 R3 垂直施工。`01-定義` 在 R3 資料模型穩定前同樣視為 legacy glossary，不要求先擴寫詞典才能實作。
 
 ## 二、狀態圖例（做完 vs 沒做完，一眼判斷）
 
@@ -30,21 +30,21 @@
 
 | 文件 | 分類 | 版本 | 狀態 | 說明 |
 |---|---|---|---|---|
-| [VisionForge_Constitution_v1.0.md](00-法規/VisionForge_Constitution_v1.0.md) | 法規 | v1.0 | 🟩 定案 | **最高法**。79 條可引用條文＋名詞定義＋違憲審查附錄 |
-| [VisionForge_AI分工協議_v1.md](00-法規/VisionForge_AI分工協議_v1.md) | 法規 | v1.2 | 🟩 定案 | Architect／Builder 角色分工（綁角色不綁型號）、規格票制、紅線、審查分級 |
-| [交接手冊.md](交接手冊.md) | 治理 | 活文件 | 🟩 定案 | 架構代理交接程序、戰況、環境怪癖、工作慣例 |
-| [名詞定義表.md](01-定義/名詞定義表.md) | 定義 | 活文件 | 🟩 定案 | 全專案語彙登記處；憲法名詞之快速索引 |
+| [VisionForge_Constitution_v1.0.md](00-法規/VisionForge_Constitution_v1.0.md) | 法規 | v1.0 | 🟧 部分失效 | R3 延續資料主權、provenance、人工權威、可回滾、可驗證與 Rule of Two；其餘產品／治理限制不再優先 |
+| [VisionForge_AI分工協議_v1.md](00-法規/VisionForge_AI分工協議_v1.md) | 法規 | v1.2 | ⬛ 已歸檔 | 已由 R3 §9 的 Lead／Builder／Independent Reviewer／E2E QA 取代 |
+| [交接手冊.md](交接手冊.md) | 治理 | 活文件 | ⬛ 已歸檔 | 僅保留環境與歷史線索，不再作為 Architect 接任程序 |
+| [名詞定義表.md](01-定義/名詞定義表.md) | 定義 | legacy | 🟧 部分失效 | 舊語彙索引；R3 新資料模型穩定後再擷取仍有效名詞 |
 | [ADR-模板.md](02-ADR/ADR-模板.md) | ADR | v1 | 🟩 定案 | 一切架構決策的固定格式 |
-| [ADR-0001-文件治理結構.md](02-ADR/ADR-0001-文件治理結構.md) | ADR | — | 🟩 已採納 | 本 docs/ 結構自身的決策紀錄 |
+| [ADR-0001-文件治理結構.md](02-ADR/ADR-0001-文件治理結構.md) | ADR | — | 🟧 部分失效 | 目錄可保留；舊效力層級、修憲與票務前置已由 R3 取代 |
 | [ADR-0002-技術棧選定.md](02-ADR/ADR-0002-技術棧選定.md) | ADR | — | 🟩 已採納 | Electron＋React/TS＋FastAPI＋SQLite＋CI 守門鏈 |
-| [ADR-0003-Claim-Schema-v1.md](02-ADR/ADR-0003-Claim-Schema-v1.md) | ADR | — | 🟩 已採納 | Claim Schema 定案＋五項裁決；唯一事實來源＝`core/.../contracts/claims.py` |
-| [ADR-0004-帳本Schema-v1.md](02-ADR/ADR-0004-帳本Schema-v1.md) | ADR | — | 🟩 已採納 | Decision/Cost/ReviewEvent/Manifest/黃金集帳本；含本 ADR 之 commit 已合併（b862c71），視同採納 |
+| [ADR-0003-Claim-Schema-v1.md](02-ADR/ADR-0003-Claim-Schema-v1.md) | ADR | — | 🟧 部分失效 | Geometry／provenance 基座保留；「Label 必須源自 Claim」已由 R3 取代 |
+| [ADR-0004-帳本Schema-v1.md](02-ADR/ADR-0004-帳本Schema-v1.md) | ADR | — | 🟧 部分失效 | 歷史帳本相容性保留；Decision／Cost／Golden 不再強制位於 First Forge 主線 |
 | [ADR-0005-儲存層設計.md](02-ADR/ADR-0005-儲存層設計.md) | ADR | — | 🟩 已採納 | 文件式 SQLite＋append-only repos＋遷移＋blob 庫；含本 ADR 之 commit 已合併（661f5c1），視同採納 |
 | [ADR-0006-匯入正規化與媒體身分政策.md](02-ADR/ADR-0006-匯入正規化與媒體身分政策.md) | ADR | — | 🟩 已採納 | 媒體身分＝入庫位元組雜湊；EXIF 轉正 Policy B；Pillow 釘版；縮圖規格；隨票-0003 合併（4ab83f7），視同採納 |
-| [ADR-0007-校準引擎.md](02-ADR/ADR-0007-校準引擎.md) | ADR | — | 🟩 已採納 | 全域先驗＋逐類收縮估計、信賴度分級（none/low/high）與路由、CalibrationSnapshot 快照契約（R2 9.2）；採納 8c01796，已實作合併 ad3914c（PR #4，83 測試綠） |
-| [ADR-0008-VisionProvider抽象.md](02-ADR/ADR-0008-VisionProvider抽象.md) | ADR | — | 🟩 已採納 | Provider 抽象：能力聲明契約（穩定）＋invoke 介面 provisional（不凍結，A10 接滿 3 家再固化）＋輸出正規化/校準為核心（R2 §6）；採納 9aed72b，能力聲明契約＋介面已落 core |
+| [ADR-0007-校準引擎.md](02-ADR/ADR-0007-校準引擎.md) | ADR | — | ⬛ 已歸檔 | 實作保留供研究；現有血統與統計語意不足，不再作為 First Forge 主線或品質宣稱 |
+| [ADR-0008-VisionProvider抽象.md](02-ADR/ADR-0008-VisionProvider抽象.md) | ADR | — | 🟧 部分失效 | Teacher 接入經驗保留；R3 改採 TeacherAdapter／TrainerAdapter／ModelRunner 三個窄介面 |
 | [ADR-0009-UI-Python橋接.md](02-ADR/ADR-0009-UI-Python橋接.md) | ADR | — | 🟩 已採納 | Electron 管理本機 FastAPI sidecar；localhost 離線優先；打包延後 M1；API 型別重用契約生成物；採納 a0d4bcb，票-0009/0010/0011 已落地（M0 端到端達成） |
-| [ADR-0010-審核中心骨架.md](02-ADR/ADR-0010-審核中心骨架.md) | ADR | — | 🟨 提案 | Claim→Label 審核飛輪最小閉環：run 記錄＋最小 Taxonomy＋審核狀態機(D7)＋概念分組＋黃金集升級＋校準閉合；延後視覺聚類/盲審(A10)；**合併即視同採納** |
+| [ADR-0010-審核中心骨架.md](02-ADR/ADR-0010-審核中心骨架.md) | ADR | — | ⬛ 已歸檔 | 舊 Claim 審核／Golden／校準閉合方案；由 R3 教學工作區、Coverage 與 Label revision 模型取代 |
 | [20260707-claim-schema-草案.md](05-討論/20260707-claim-schema-草案.md) | 討論 | v0.1 | ⬛ 已歸檔 | 已落地於 ADR-0003＋契約程式碼 |
 | [票-0001-UI殼與Bridge.md](06-規格票/票-0001-UI殼與Bridge.md) | 規格票 | — | ⬛ 已結案 | 審查通過（Blocking 0）；Non-blocking 5 項移票-0002 |
 | [票-0002-UI殼安全加固.md](06-規格票/票-0002-UI殼安全加固.md) | 規格票 | — | ⬛ 已結案 | L0 合併＋L1 抽查通過；openExternal 白名單、導航鎖、CSP、depcruise 擴充 |
@@ -63,32 +63,34 @@
 | [票-0015-整理站審核UI.md](06-規格票/票-0015-整理站審核UI.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（0183702，PR #21，ui 25 測試）；「整理」站審核 UI。**M0 資料飛輪完整閉合** |
 | [票-0016-app資料集匯出.md](06-規格票/票-0016-app資料集匯出.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（de219fb，PR #23，app 59 測試）；POST /export 版本快照＋YOLO/COCO。**M0 資料工房完整可出貨** |
 | [票-0017-OpenAI-provider.md](06-規格票/票-0017-OpenAI-provider.md) | 規格票 | — | ⬛ 已結案 | L2 re-review 通過合併（2f52b2e，PR #24）；第一個真實老師（OpenAI 雲端 VLM）＋sidecar 防孤兒＋provider 錯誤回 CORS 502＋base_url 釘版。**實機對 cat 圖畫框成功** |
-| [GoodYolo_產品規劃書.md](03-規劃/GoodYolo_產品規劃書.md) | 規劃 | R1 | 🟧 部分失效 | 10 項設計被憲法附錄推翻；治理／審核／白話層章節仍為 R3 素材 |
-| [GoodYolo_架構評審_R2.md](04-評審/GoodYolo_架構評審_R2.md) | 評審 | R2 | 🟩 定案 | 結論已入憲；10.6 新骨架為 R3 與開發基準 |
+| [VisionForge_重構開工書_R3.md](03-規劃/VisionForge_重構開工書_R3.md) | 規劃 | R3 | 🟩 定案 | **現行產品重構與 Agent 施工基準**；legacy 文件整理與產品施工可平行 |
+| [EXECUTION.md](03-規劃/EXECUTION.md) | 執行 | 活文件 | 🟩 現行 | Slice 0～4 實作真相、跨電腦接續、產品判決、機械驗證、限制與下一條施工線 |
+| [GoodYolo_產品規劃書.md](03-規劃/GoodYolo_產品規劃書.md) | 規劃 | R1 | ⬛ 已歸檔 | 已由 VisionForge 重構開工書 R3 取代，僅供考古 |
+| [GoodYolo_架構評審_R2.md](04-評審/GoodYolo_架構評審_R2.md) | 評審 | R2 | ⬛ 已歸檔 | 已完成歷史使命；未被 R3 重申的結論不得作為現行施工依據 |
 
 ## 四、目錄規則（未來大量 md 的家）
 
 | 資料夾 | 住什麼 | 命名規則 |
 |---|---|---|
-| `00-法規/` | 憲法、協議。只放 🟩 定案 | 名稱含版本號 |
+| `00-法規/` | 2026-07-13 前的憲法、協議歷史原文 | 保留原名與頂部狀態標記，不再新增企業式法規 |
 | `01-定義/` | 名詞定義表（單一檔案，活文件） | 固定 |
 | `02-ADR/` | 架構決策紀錄 | `ADR-NNNN-標題.md`，編號遞增不重用 |
 | `03-規劃/` | 產品規劃（R1、未來 R3…） | 沿用既有名或 `R{n}_主題.md` |
 | `04-評審/` | 評審與挑戰報告 | 同上 |
 | `05-討論/` | **一切未定案的思考**（規則見該夾 README） | `YYYYMMDD-主題.md` |
-| `06-規格票/` | 發包給 Codex 的任務單（格式依分工協議 §3；ADR-0001 修訂記錄） | `票-NNNN-標題.md` |
+| `06-規格票/` | 歷史施工票，保留 commit 與決策線索；不再新增 | 保留原名 |
 
-**生命週期**：`05-討論`（🟦→🟨）→ 定案後**畢業**——結論按性質落地為 修憲案／ADR／規劃章節，原討論檔標 ⬛ 並在頂部註明「已落地於某處」留底。討論檔永遠不直接變成法規。
+**現行生命週期**：討論素材收斂進 R3、Architecture、Execution 或真正必要的 ADR；歷史檔保留但不再以修憲／票務程序作為一般產品施工前置。
 
-**三條登記義務**：
+**三條文件習慣**：
 1. 新文件 → 登記於本頁「文件登記表」。
-2. 新的跨文件名詞 → 先登記於 `01-定義/名詞定義表.md`，再使用（防語彙漂移）。
+2. 新資料模型術語先在 R3／現行 Architecture 定義；穩定後再同步 glossary，避免為字典阻擋實驗。
 3. 狀態變更（定案、失效、歸檔）→ 同步更新檔內狀態列與本頁登記表。
 
-## 五、AI Agent 守則（憲法 D19／D20 的落地）
+## 五、AI Agent 守則
 
-1. 進場**必讀** `00-法規/` 全部內容，之後才可動任何檔案。
-2. 憲法條文可被引用為終局依據；認為條文錯誤 → 提修憲案，不得繞過（D19）。
-3. 任何提交的說明必須聲明觸及的憲法條文與合規性（D20）。
-4. 🟨／🟦／⬛ 狀態的文件**不得**作為設計或實作依據。
-5. 觸及 `00-法規`、`01-定義` 的修改屬於修憲／修法行為，必須經過人（李宗鴻）確認。
+1. 進場先讀 R3、README 與當期相關程式；只在需要歷史理由時讀 legacy docs。
+2. 程式、資料與真實端到端行為優先於舊票面完成狀態。
+3. 一位 Lead 對垂直成果負責；Builders 可跨目錄，高風險變更才需要獨立 Reviewer。
+4. 使用者是 Direction Setter，不負責逐項技術審核；只有真正的產品方向或不可替代的外部選擇才交還使用者。
+5. 不要求每個 commit 引用憲法條文，也不以文件數、票數或審查計數代替可運作的使用者旅程。
