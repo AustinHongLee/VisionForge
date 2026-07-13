@@ -1,5 +1,9 @@
 """Slice 2：TrainingRun child worker、成功註冊與失敗不產 Artifact。"""
 
+import json
+import subprocess
+import sys
+import zipfile
 from datetime import datetime, timezone
 from importlib.util import find_spec
 from io import BytesIO
@@ -7,6 +11,7 @@ from io import BytesIO
 import pytest
 from PIL import Image
 from visionforge_app.importer import import_media
+from visionforge_app.release import build_release
 from visionforge_app.training import create_training_run, interrupt_orphaned_runs
 from visionforge_app.training import worker as worker_module
 from visionforge_app.training.tiny_detector import load_and_predict
@@ -98,12 +103,18 @@ def training_project(tmp_path):
     return root, version
 
 
-def create_run(root, run_id: str, *, input_size: int = 256):
+def create_run(
+    root,
+    run_id: str,
+    *,
+    input_size: int = 256,
+    dataset_version_id: str = ulid(50),
+):
     with open_project(root) as project:
         return create_training_run(
             project,
             training_run_id=run_id,
-            dataset_version_id=ulid(50),
+            dataset_version_id=dataset_version_id,
             trainer_version="1.0.0",
             recipe=TrainingRecipe(epochs=1, input_size=input_size),
             created_at=NOW,
@@ -170,6 +181,46 @@ def test_real_tiny_detector_trains_saves_and_reloads(training_project, monkeypat
         )
         assert isinstance(predictions, tuple)
         assert project.training_runs.latest_event(ulid(75)).status == "succeeded"
+        release = build_release(
+            project,
+            artifact_id=artifact.artifact_id,
+            release_id=ulid(76),
+            created_at=NOW,
+        )
+
+    extracted = root.parent / "portable-release"
+    with zipfile.ZipFile(root / release.relative_path) as archive:
+        names = set(archive.namelist())
+        assert {
+            "manifest.json",
+            "README.md",
+            "THIRD_PARTY_LICENSES.md",
+            "runner/requirements.lock",
+            "runner/visionforge_runner.py",
+            "schemas/input.schema.json",
+            "schemas/output.schema.json",
+            "parity/expected.json",
+        } <= names
+        archive.extractall(extracted)
+    manifest = json.loads((extracted / "manifest.json").read_text(encoding="utf-8"))
+    parity_input = extracted / manifest["parity"]["input"]
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(extracted / "runner" / "visionforge_runner.py"),
+            "--release",
+            str(extracted),
+            "--input",
+            str(parity_input),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert json.loads(completed.stdout) == json.loads(
+        (extracted / "parity" / "expected.json").read_text(encoding="utf-8")
+    )
+    assert not (extracted / "project.db").exists()
 
 
 def test_restart_marks_queued_attempt_interrupted(training_project):
@@ -242,3 +293,80 @@ def test_validation_feedback_is_unverified_then_forced_out_of_future_validation(
             item for item in next_version.items if item.media_hash == validation_item.media_hash
         )
         assert feedback_item.split == "train"
+
+
+def test_add_b_builds_v2_without_overwriting_a_release_v1(training_project, monkeypatch):
+    root, version_v1 = training_project
+    monkeypatch.setenv("VISIONFORGE_TRAINER_FIXTURE", "1")
+    create_run(root, ulid(100))
+    run_worker(root, ulid(100))
+
+    with open_project(root) as project:
+        artifact_v1 = project.model_artifacts.by_run(ulid(100))
+        assert artifact_v1 is not None
+        release_v1 = build_release(
+            project,
+            artifact_id=artifact_v1.artifact_id,
+            release_id=ulid(102),
+            created_at=NOW,
+        )
+        archive_v1 = root / release_v1.relative_path
+        archive_v1_hash = release_v1.archive_hash
+
+        add_concept(
+            project,
+            concept_id=ulid(21),
+            task_id=ulid(10),
+            display_name="B",
+            created_at=NOW,
+        )
+        for index, item in enumerate(version_v1.items, start=1):
+            assert project.coverage.get(ulid(10), item.media_hash, ulid(21)) is None
+            add_annotation(
+                project,
+                revision_id=ulid(110 + index),
+                annotation_id=ulid(120 + index),
+                task_id=ulid(10),
+                media_hash=item.media_hash,
+                concept_id=ulid(21),
+                bbox=BBox(x1=0.55, y1=0.55, x2=0.85, y2=0.85),
+                created_by="user",
+                created_at=NOW,
+            )
+            set_coverage(
+                project,
+                task_id=ulid(10),
+                media_hash=item.media_hash,
+                concept_id=ulid(21),
+                state=CoverageState.verified_complete,
+                reviewer="user",
+                verified_at=NOW,
+            )
+        version_v2, _ = freeze_dataset(
+            project,
+            dataset_version_id=ulid(130),
+            task_id=ulid(10),
+            created_at=NOW,
+        )
+        assert version_v2.version_number == 2
+        assert version_v2.concept_ids == (ulid(20), ulid(21))
+
+    create_run(root, ulid(140), dataset_version_id=ulid(130))
+    run_worker(root, ulid(140))
+    with open_project(root) as project:
+        artifact_v2 = project.model_artifacts.by_run(ulid(140))
+        assert artifact_v2 is not None
+        release_v2 = build_release(
+            project,
+            artifact_id=artifact_v2.artifact_id,
+            release_id=ulid(142),
+            created_at=NOW,
+        )
+        assert release_v2.version_number == 2
+        assert release_v2.parent_ref == release_v1.release_id
+        assert project.capability_releases.get(release_v1.release_id) == release_v1
+        assert project.dataset_versions.get(version_v1.dataset_version_id) == version_v1
+        assert archive_v1.is_file()
+        stored_v1 = project.capability_releases.get(release_v1.release_id)
+        assert stored_v1.archive_hash == archive_v1_hash
+        assert (root / release_v2.relative_path).is_file()

@@ -13,6 +13,7 @@ import sqlite3
 from visionforge_core.contracts import (
     AnnotationRevision,
     CalibrationSnapshot,
+    CapabilityRelease,
     Claim,
     ClaimTeachingContext,
     ConceptDefinition,
@@ -902,3 +903,46 @@ class EvaluationFeedbackRepository:
             (task_id,),
         )
         return [EvaluationFeedback.model_validate_json(row["json"]) for row in rows]
+
+
+class CapabilityReleaseRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def append(self, release: CapabilityRelease) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO capability_releases(release_id, task_id, version_number, created_at, json)"
+            " VALUES(?, ?, ?, ?, ?)",
+            (
+                release.release_id,
+                release.task_id,
+                release.version_number,
+                release.created_at.isoformat(),
+                release.model_dump_json(),
+            ),
+            f"capability release {release.task_id}/v{release.version_number}",
+        )
+
+    def get(self, release_id: str) -> CapabilityRelease:
+        row = self._db.query_one(
+            "SELECT json FROM capability_releases WHERE release_id = ?", (release_id,)
+        )
+        if row is None:
+            raise NotFoundError(f"capability release {release_id} 不存在")
+        return CapabilityRelease.model_validate_json(row["json"])
+
+    def list_by_task(self, task_id: str) -> list[CapabilityRelease]:
+        rows = self._db.query_all(
+            "SELECT json FROM capability_releases WHERE task_id = ? ORDER BY version_number",
+            (task_id,),
+        )
+        return [CapabilityRelease.model_validate_json(row["json"]) for row in rows]
+
+    def latest(self, task_id: str) -> CapabilityRelease | None:
+        row = self._db.query_one(
+            "SELECT json FROM capability_releases WHERE task_id = ?"
+            " ORDER BY version_number DESC LIMIT 1",
+            (task_id,),
+        )
+        return CapabilityRelease.model_validate_json(row["json"]) if row else None

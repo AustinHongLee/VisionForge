@@ -17,6 +17,7 @@ from visionforge_core.storage.media_store import MediaBlobStore
 from visionforge_core.storage.repositories import (
     AnnotationRepository,
     CalibrationRepository,
+    CapabilityReleaseRepository,
     ClaimTeachingContextRepository,
     ConceptRepository,
     CostRepository,
@@ -60,6 +61,7 @@ class Project:
         self.model_artifacts = ModelArtifactRepository(db)
         self.evaluations = EvaluationRepository(db)
         self.evaluation_feedback = EvaluationFeedbackRepository(db)
+        self.capability_releases = CapabilityReleaseRepository(db)
         self.runs = RunRepository(db)
         self.labels = LabelRepository(db)
         self.decisions = DecisionRepository(db)

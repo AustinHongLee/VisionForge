@@ -98,12 +98,12 @@ describe("App", () => {
     expect(await screen.findByText("v0.1.0")).toBeInTheDocument();
   });
 
-  it("keeps the release station explicit while packaging is not yet built", () => {
+  it("opens the portable capability release station", () => {
     fetchMock.mockImplementation(emptyApi);
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: /版本/ }));
-    expect(screen.getByRole("heading", { name: "版本施工中" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "把能力帶走，不依賴 Studio" })).toBeInTheDocument();
   });
 
   it("loads media and renders thumbnail images", async () => {
@@ -369,6 +369,63 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "執行本地模型" }));
 
     expect(await screen.findByText("Gate Valve 88%")).toBeInTheDocument();
+  });
+
+  it("publishes and exposes a portable CapabilityRelease archive", async () => {
+    const task = {
+      created_at: "2026-07-13T00:00:00Z",
+      kind: "detect",
+      name: "閥件偵測",
+      task_id: TASK_ID,
+    };
+    const artifactId = "0000000000000000000000000F";
+    const artifact = {
+      artifact_hash: "a".repeat(64),
+      artifact_id: artifactId,
+      class_map: [{ class_index: 0, concept_id: CONCEPT_ID, display_name: "Gate Valve" }],
+      confidence_threshold: 0.35,
+      created_at: "2026-07-13T00:00:00Z",
+      dataset_version_id: "0000000000000000000000000D",
+      input_size: 256,
+      relative_path: "artifacts/model.pt",
+      task_id: TASK_ID,
+      training_run_id: "0000000000000000000000000E",
+    };
+    const release = {
+      archive_hash: "b".repeat(64),
+      artifact_ids: [artifactId],
+      created_at: "2026-07-13T00:00:00Z",
+      manifest_hash: "c".repeat(64),
+      relative_path: "releases/v1.zip",
+      release_id: "0000000000000000000000000G",
+      task_id: TASK_ID,
+      version_number: 1,
+    };
+    let releases: unknown[] = [];
+    fetchMock.mockImplementation(async (input, init) => {
+      const path = new URL(String(input)).pathname;
+      const method = init?.method ?? "GET";
+      if (path === "/media") return jsonResponse(page([]));
+      if (path === "/tasks") return jsonResponse([task]);
+      if (path.endsWith("/artifacts")) return jsonResponse([artifact]);
+      if (path.endsWith("/releases") && method === "GET") return jsonResponse(releases);
+      if (path === "/releases" && method === "POST") {
+        releases = [release];
+        return jsonResponse(release);
+      }
+      throw new Error(`Unexpected request ${method} ${path}`);
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /版本/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "發布下一個能力版本" }));
+
+    const link = await screen.findByRole("link", { name: "儲存 zip" });
+    expect(screen.getByText("CapabilityRelease v1")).toBeInTheDocument();
+    expect(link).toHaveAttribute(
+      "href",
+      `${API_BASE}/releases/${release.release_id}/archive`,
+    );
   });
 
   it("shows an error state when the API base URL is not ready", async () => {

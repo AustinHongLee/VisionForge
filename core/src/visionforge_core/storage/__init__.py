@@ -12,6 +12,7 @@ from visionforge_core.storage.media_store import MediaBlobStore
 from visionforge_core.storage.project import Project, create_project, open_project
 from visionforge_core.storage.repositories import (
     AnnotationRepository,
+    CapabilityReleaseRepository,
     ClaimTeachingContextRepository,
     ConceptRepository,
     CostRepository,
@@ -35,6 +36,7 @@ from visionforge_core.storage.repositories import (
 __all__ = [
     "MAX_SCHEMA",
     "AnnotationRepository",
+    "CapabilityReleaseRepository",
     "ClaimTeachingContextRepository",
     "ConceptRepository",
     "ConflictError",

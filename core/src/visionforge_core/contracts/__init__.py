@@ -55,6 +55,7 @@ from visionforge_core.contracts.providers import (
     ProviderRole,
     VisionTask,
 )
+from visionforge_core.contracts.release import CapabilityRelease
 from visionforge_core.contracts.taxonomy import TaxonomyNode
 from visionforge_core.contracts.teaching import (
     AnnotationRevision,
@@ -96,6 +97,7 @@ __all__ = [
     "CALIBRATION_METHOD",
     "CalibrationMapping",
     "CalibrationSnapshot",
+    "CapabilityRelease",
     "CandidateProvider",
     "ClassCalibration",
     "MappingPoint",

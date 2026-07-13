@@ -1,6 +1,7 @@
 import type {
   AnnotationRevision,
   BBox,
+  CapabilityRelease,
   CalibrationSnapshot,
   Claim,
   Concept,
@@ -317,4 +318,15 @@ export const applyArtifact = async (artifactId: string, file: File): Promise<App
     method: "POST",
   });
   return parseResponse<ApplyResult>(response);
+};
+
+export const listReleases = async (taskId: string): Promise<CapabilityRelease[]> =>
+  jsonRequest(`/tasks/${encodeURIComponent(taskId)}/releases`, "GET");
+
+export const createRelease = async (artifactId: string): Promise<CapabilityRelease> =>
+  jsonRequest("/releases", "POST", { artifact_id: artifactId });
+
+export const releaseArchiveUrl = async (releaseId: string): Promise<string> => {
+  const baseUrl = await getBaseUrl();
+  return `${baseUrl}/releases/${encodeURIComponent(releaseId)}/archive`;
 };

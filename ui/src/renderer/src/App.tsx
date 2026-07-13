@@ -4,6 +4,7 @@ import { importFile, listMedia, thumbnailUrl } from "./api/client";
 import ApplyView from "./components/ApplyView";
 import DistillView from "./components/DistillView";
 import DropZone from "./components/DropZone";
+import ReleaseView from "./components/ReleaseView";
 import TeachingView from "./components/TeachingView";
 import ThumbnailGrid from "./components/ThumbnailGrid";
 
@@ -154,6 +155,8 @@ const App = (): React.JSX.Element => {
           <DistillView onError={setApiError} />
         ) : activeStation === "apply" ? (
           <ApplyView onError={setApiError} />
+        ) : activeStation === "releases" ? (
+          <ReleaseView onError={setApiError} />
         ) : (
           <div className="empty-panel">
             <p className="eyebrow">{active.english}</p>

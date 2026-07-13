@@ -43,6 +43,19 @@ export type EstimatedCostRef = string | null;
 export type ProviderId = string;
 export type ProviderVersion = string;
 export type RejectedReason = string | null;
+export type ArchiveHash = string;
+/**
+ * @minItems 1
+ */
+export type ArtifactIds = [string, ...string[]];
+export type CreatedAt2 = string;
+export type ManifestHash = string;
+export type ParentRef = string | null;
+export type RelativePath = string;
+export type ReleaseId = string;
+export type SchemaVersion2 = "1.0";
+export type TaskId1 = string;
+export type VersionNumber = number;
 export type Assertion = "presence" | "absence";
 export type ClaimId = string;
 export type Actor = string;
@@ -85,16 +98,16 @@ export type ReviewStatus =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
 export type ClaimId1 = string;
 export type ConceptId1 = string;
-export type TaskId1 = string;
+export type TaskId2 = string;
 export type ClassIndex = number;
 export type ConceptId2 = string;
 export type DisplayName = string;
 export type Aliases = string[];
 export type ConceptId3 = string;
-export type CreatedAt2 = string;
+export type CreatedAt3 = string;
 export type DisplayName1 = string;
-export type SchemaVersion2 = "1.0";
-export type TaskId2 = string;
+export type SchemaVersion3 = "1.0";
+export type TaskId3 = string;
 export type Id = string;
 export type Kind1 = "provider" | "human";
 export type Version = string | null;
@@ -108,7 +121,7 @@ export type Measurements = [CostMeasurement, ...CostMeasurement[]];
 export type Amount = number | string;
 export type Unit = string;
 export type Phase = "estimate" | "actual";
-export type SchemaVersion3 = "1.0";
+export type SchemaVersion4 = "1.0";
 export type Id1 = string;
 export type Kind2 =
   | "media"
@@ -129,9 +142,9 @@ export type Kind2 =
 export type ConceptId4 = string;
 export type MediaHash1 = string;
 export type Reviewer1 = string | null;
-export type SchemaVersion4 = "1.0";
+export type SchemaVersion5 = "1.0";
 export type CoverageState = "unverified" | "verified_complete" | "verified_absent";
-export type TaskId3 = string;
+export type TaskId4 = string;
 export type VerifiedAt = string | null;
 export type ConceptId5 = string;
 export type State = "verified_complete" | "verified_absent";
@@ -153,30 +166,30 @@ export type ClassMap = [ClassMapEntry, ...ClassMapEntry[]];
  * @minItems 1
  */
 export type ConceptIds = [string, ...string[]];
-export type CreatedAt3 = string;
+export type CreatedAt4 = string;
 export type DatasetVersionId = string;
 /**
  * @minItems 2
  */
 export type Items = [DatasetItem, DatasetItem, ...DatasetItem[]];
-export type ParentRef = string | null;
-export type SchemaVersion5 = "1.0";
-export type TaskId4 = string;
-export type VersionNumber = number;
-export type CreatedAt4 = string;
+export type ParentRef1 = string | null;
+export type SchemaVersion6 = "1.0";
+export type TaskId5 = string;
+export type VersionNumber1 = number;
+export type CreatedAt5 = string;
 export type LabelRefs = string[];
 export type MediaHash3 = string;
 export type Split1 = "train" | "val";
 export type Entries = ManifestEntry[];
 export type GateDecisionRef = string | null;
 export type Note = string;
-export type ParentRef1 = string | null;
+export type ParentRef2 = string | null;
 export type Human = number;
 export type Imported = number;
 export type MachineAssisted = number;
-export type SchemaVersion6 = "1.0";
+export type SchemaVersion7 = "1.0";
 export type VersionId = string;
-export type VersionNumber1 = number;
+export type VersionNumber2 = number;
 export type ReasonCode = string;
 export type Target = string;
 export type At1 = string;
@@ -184,7 +197,7 @@ export type DecisionRef = string;
 export type Detail = string;
 export type OutcomeId = string;
 export type ProducedRefs = InputRef[];
-export type SchemaVersion7 = "1.0";
+export type SchemaVersion8 = "1.0";
 export type Status1 = "success" | "failure" | "cancelled" | "partial";
 export type Actor1 = string;
 export type At2 = string;
@@ -200,27 +213,27 @@ export type Kind3 =
 export type OverridesRef = string | null;
 export type PolicyHash = string;
 export type PolicyLabel = string;
-export type SchemaVersion8 = "1.0";
+export type SchemaVersion9 = "1.0";
 export type ConceptId7 = string;
 export type Confidence1 = number | null;
 export type Kind4 = "missed" | "false_positive" | "localization" | "classification";
 export type MediaHash4 = string;
 export type ArtifactId = string;
 export type ConceptId8 = string;
-export type CreatedAt5 = string;
+export type CreatedAt6 = string;
 export type EvaluationId = string;
 export type FeedbackId = string;
 export type MediaHash5 = string;
-export type TaskId5 = string;
+export type TaskId6 = string;
 export type Name = "precision" | "recall" | "mean_iou";
 export type Value = number;
 export type ArtifactId1 = string;
-export type CreatedAt6 = string;
+export type CreatedAt7 = string;
 export type DatasetVersionId1 = string;
 export type Errors = EvaluationError[];
 export type EvaluationId1 = string;
 export type Metrics = EvaluationMetric[];
-export type SchemaVersion9 = "1.0";
+export type SchemaVersion10 = "1.0";
 /**
  * @minItems 1
  */
@@ -231,11 +244,11 @@ export type EntryId = string;
 export type LabelRef = string;
 export type MediaHash6 = string;
 export type RetiredReason = string | null;
-export type SchemaVersion10 = "1.0";
+export type SchemaVersion11 = "1.0";
 export type Status2 = "active" | "retired";
 export type Claims = Claim[];
 export type CostRef = string;
-export type CreatedAt7 = string;
+export type CreatedAt8 = string;
 export type DecisionRef1 = string;
 export type DurationMs = number;
 export type ParamsHash = string;
@@ -243,7 +256,7 @@ export type PromptRef = string | null;
 export type ProviderId1 = string;
 export type ProviderVersion1 = string;
 export type RunId = string;
-export type SchemaVersion11 = "1.0";
+export type SchemaVersion12 = "1.0";
 export type HeightPx = number;
 export type MediaHash7 = string;
 export type WidthPx = number;
@@ -256,20 +269,20 @@ export type MediaHash8 = string;
 export type ReviewedAt1 = string;
 export type Reviewer2 = string;
 export type RunRef = string;
-export type SchemaVersion12 = "1.0";
+export type SchemaVersion13 = "1.0";
 export type SourceStatus = "approved" | "edited_approved";
 export type AssignedAt = string;
 export type MediaHash9 = string;
-export type SchemaVersion13 = "1.0";
+export type SchemaVersion14 = "1.0";
 export type SourceGroupId1 = string;
-export type TaskId6 = string;
+export type TaskId7 = string;
 export type ByteSize = number;
 export type ExifNormalized = boolean;
 export type Format1 = "jpeg" | "png" | "webp" | "bmp" | "tiff";
 export type HeightPx1 = number;
 export type ImportedAt = string;
 export type MediaHash10 = string;
-export type SchemaVersion14 = "1.0";
+export type SchemaVersion15 = "1.0";
 export type Detail1 = string;
 export type Kind5 = "file" | "folder" | "clipboard" | "video_frame" | "pdf_page" | "camera" | "screen" | "url";
 export type WidthPx1 = number;
@@ -277,12 +290,12 @@ export type ArtifactHash = string;
 export type ArtifactId2 = string;
 export type ClassMap1 = ClassMapEntry[];
 export type ConfidenceThreshold = number;
-export type CreatedAt8 = string;
+export type CreatedAt9 = string;
 export type DatasetVersionId2 = string;
 export type InputSize = number;
-export type RelativePath = string;
-export type SchemaVersion15 = "1.0";
-export type TaskId7 = string;
+export type RelativePath1 = string;
+export type SchemaVersion16 = "1.0";
+export type TaskId8 = string;
 export type TrainingRunId = string;
 export type ConceptId9 = string;
 export type Confidence2 = number;
@@ -299,7 +312,7 @@ export type PromptableBy = [
 export type ProviderId2 = string;
 export type Reproducible = boolean;
 export type Role = "teacher" | "student";
-export type SchemaVersion16 = "1.0";
+export type SchemaVersion17 = "1.0";
 /**
  * @minItems 1
  */
@@ -324,28 +337,28 @@ export type EventId = string;
 export type ReviewStatus1 =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
 export type LabelRef1 = string | null;
-export type SchemaVersion17 = "1.0";
+export type SchemaVersion18 = "1.0";
 export type ReviewStatus2 =
   "draft" | "queued_fast" | "queued_detail" | "queued_manual" | "approved" | "edited_approved" | "rejected";
-export type CreatedAt9 = string;
+export type CreatedAt10 = string;
 export type Kind6 = "detect";
 export type Name1 = string;
-export type SchemaVersion18 = "1.0";
-export type TaskId8 = string;
-export type CreatedAt10 = string;
+export type SchemaVersion19 = "1.0";
+export type TaskId9 = string;
+export type CreatedAt11 = string;
 export type NodeId = string;
 export type RawText1 = string;
-export type SchemaVersion19 = "1.0";
+export type SchemaVersion20 = "1.0";
 export type BatchSize = number;
 export type Epochs = number;
 export type InputSize1 = number;
 export type LearningRate = number;
 export type Seed = number;
-export type CreatedAt11 = string;
+export type CreatedAt12 = string;
 export type DatasetVersionId3 = string;
 export type RetryOf = string | null;
-export type SchemaVersion20 = "1.0";
-export type TaskId9 = string;
+export type SchemaVersion21 = "1.0";
+export type TaskId10 = string;
 export type TrainerId = "visionforge_tiny_detector";
 export type TrainerVersion = string;
 export type TrainingRunId1 = string;
@@ -455,6 +468,22 @@ export interface CandidateProvider {
   provider_id: ProviderId;
   provider_version: ProviderVersion;
   rejected_reason?: RejectedReason;
+}
+/**
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "CapabilityRelease".
+ */
+export interface CapabilityRelease {
+  archive_hash: ArchiveHash;
+  artifact_ids: ArtifactIds;
+  created_at: CreatedAt2;
+  manifest_hash: ManifestHash;
+  parent_ref?: ParentRef;
+  relative_path: RelativePath;
+  release_id: ReleaseId;
+  schema_version?: SchemaVersion2;
+  task_id: TaskId1;
+  version_number: VersionNumber;
 }
 /**
  * 單一實例的陳述。Claim 是有出處的意見，不是事實（憲法 §3）。
@@ -581,7 +610,7 @@ export interface Review {
 export interface ClaimTeachingContext {
   claim_id: ClaimId1;
   concept_id: ConceptId1;
-  task_id: TaskId1;
+  task_id: TaskId2;
 }
 /**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
@@ -601,10 +630,10 @@ export interface ClassMapEntry {
 export interface ConceptDefinition {
   aliases?: Aliases;
   concept_id: ConceptId3;
-  created_at: CreatedAt2;
+  created_at: CreatedAt3;
   display_name: DisplayName1;
-  schema_version?: SchemaVersion2;
-  task_id: TaskId2;
+  schema_version?: SchemaVersion3;
+  task_id: TaskId3;
 }
 /**
  * 誰產生了這筆消耗——Provider 或人（C5：人工有價）。
@@ -631,7 +660,7 @@ export interface CostEntry {
   estimate_ref?: EstimateRef;
   measurements: Measurements;
   phase: Phase;
-  schema_version?: SchemaVersion3;
+  schema_version?: SchemaVersion4;
   subject: InputRef;
 }
 /**
@@ -666,9 +695,9 @@ export interface CoverageRecord {
   concept_id: ConceptId4;
   media_hash: MediaHash1;
   reviewer?: Reviewer1;
-  schema_version?: SchemaVersion4;
+  schema_version?: SchemaVersion5;
   state?: CoverageState;
-  task_id: TaskId3;
+  task_id: TaskId4;
   verified_at?: VerifiedAt;
 }
 /**
@@ -709,13 +738,13 @@ export interface DatasetItem {
 export interface DatasetVersion {
   class_map: ClassMap;
   concept_ids: ConceptIds;
-  created_at: CreatedAt3;
+  created_at: CreatedAt4;
   dataset_version_id: DatasetVersionId;
   items: Items;
-  parent_ref?: ParentRef;
-  schema_version?: SchemaVersion5;
-  task_id: TaskId4;
-  version_number: VersionNumber;
+  parent_ref?: ParentRef1;
+  schema_version?: SchemaVersion6;
+  task_id: TaskId5;
+  version_number: VersionNumber1;
 }
 /**
  * 一個 Dataset 版本 = 一份清單，不是一份拷貝。回滾 = 以任一舊版為 parent
@@ -725,15 +754,15 @@ export interface DatasetVersion {
  * via the `definition` "DatasetVersionManifest".
  */
 export interface DatasetVersionManifest {
-  created_at: CreatedAt4;
+  created_at: CreatedAt5;
   entries: Entries;
   gate_decision_ref?: GateDecisionRef;
   note?: Note;
-  parent_ref?: ParentRef1;
+  parent_ref?: ParentRef2;
   provenance: ProvenanceSummary;
-  schema_version?: SchemaVersion6;
+  schema_version?: SchemaVersion7;
   version_id: VersionId;
-  version_number: VersionNumber1;
+  version_number: VersionNumber2;
 }
 /**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
@@ -775,7 +804,7 @@ export interface DecisionOutcome {
   detail?: Detail;
   outcome_id: OutcomeId;
   produced_refs?: ProducedRefs;
-  schema_version?: SchemaVersion7;
+  schema_version?: SchemaVersion8;
   status: Status1;
 }
 /**
@@ -797,7 +826,7 @@ export interface DecisionRecord {
   kind: Kind3;
   overrides_ref?: OverridesRef;
   policy: PolicyRef;
-  schema_version?: SchemaVersion8;
+  schema_version?: SchemaVersion9;
 }
 /**
  * 生效政策的快照參照——重放時必須能指認當時的政策（D3）。
@@ -828,11 +857,11 @@ export interface EvaluationError {
 export interface EvaluationFeedback {
   artifact_id: ArtifactId;
   concept_id: ConceptId8;
-  created_at: CreatedAt5;
+  created_at: CreatedAt6;
   evaluation_id: EvaluationId;
   feedback_id: FeedbackId;
   media_hash: MediaHash5;
-  task_id: TaskId5;
+  task_id: TaskId6;
 }
 /**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
@@ -848,12 +877,12 @@ export interface EvaluationMetric {
  */
 export interface EvaluationReport {
   artifact_id: ArtifactId1;
-  created_at: CreatedAt6;
+  created_at: CreatedAt7;
   dataset_version_id: DatasetVersionId1;
   errors?: Errors;
   evaluation_id: EvaluationId1;
   metrics: Metrics;
-  schema_version?: SchemaVersion9;
+  schema_version?: SchemaVersion10;
   validation_media_hashes: ValidationMediaHashes;
 }
 /**
@@ -869,7 +898,7 @@ export interface GoldenSetEntry {
   label_ref: LabelRef;
   media_hash: MediaHash6;
   retired_reason?: RetiredReason;
-  schema_version?: SchemaVersion10;
+  schema_version?: SchemaVersion11;
   status?: Status2;
 }
 /**
@@ -881,12 +910,12 @@ export interface GoldenSetEntry {
 export interface InferenceRun {
   claims?: Claims;
   cost_ref: CostRef;
-  created_at: CreatedAt7;
+  created_at: CreatedAt8;
   decision_ref: DecisionRef1;
   duration_ms: DurationMs;
   producer: Producer;
   run_id: RunId;
-  schema_version?: SchemaVersion11;
+  schema_version?: SchemaVersion12;
   subject: MediaSubject;
   task: Task;
 }
@@ -932,7 +961,7 @@ export interface Label {
   reviewed_at: ReviewedAt1;
   reviewer: Reviewer2;
   run_ref: RunRef;
-  schema_version?: SchemaVersion12;
+  schema_version?: SchemaVersion13;
   source_status: SourceStatus;
 }
 /**
@@ -942,9 +971,9 @@ export interface Label {
 export interface MediaAssignment {
   assigned_at: AssignedAt;
   media_hash: MediaHash9;
-  schema_version?: SchemaVersion13;
+  schema_version?: SchemaVersion14;
   source_group_id: SourceGroupId1;
-  task_id: TaskId6;
+  task_id: TaskId7;
 }
 /**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
@@ -957,7 +986,7 @@ export interface MediaRecord {
   height_px: HeightPx1;
   imported_at: ImportedAt;
   media_hash: MediaHash10;
-  schema_version?: SchemaVersion14;
+  schema_version?: SchemaVersion15;
   source: MediaSource;
   width_px: WidthPx1;
 }
@@ -980,12 +1009,12 @@ export interface ModelArtifact {
   artifact_id: ArtifactId2;
   class_map: ClassMap1;
   confidence_threshold?: ConfidenceThreshold;
-  created_at: CreatedAt8;
+  created_at: CreatedAt9;
   dataset_version_id: DatasetVersionId2;
   input_size: InputSize;
-  relative_path: RelativePath;
-  schema_version?: SchemaVersion15;
-  task_id: TaskId7;
+  relative_path: RelativePath1;
+  schema_version?: SchemaVersion16;
+  task_id: TaskId8;
   training_run_id: TrainingRunId;
 }
 /**
@@ -1011,7 +1040,7 @@ export interface ProviderCapability {
   provider_id: ProviderId2;
   reproducible: Reproducible;
   role: Role;
-  schema_version?: SchemaVersion16;
+  schema_version?: SchemaVersion17;
   tasks: Tasks;
   trainable: Trainable;
   version: Version1;
@@ -1061,7 +1090,7 @@ export interface ReviewEvent {
   event_id: EventId;
   from_status: ReviewStatus1;
   label_ref?: LabelRef1;
-  schema_version?: SchemaVersion17;
+  schema_version?: SchemaVersion18;
   to_status: ReviewStatus2;
 }
 /**
@@ -1069,11 +1098,11 @@ export interface ReviewEvent {
  * via the `definition` "TaskRecord".
  */
 export interface TaskRecord {
-  created_at: CreatedAt9;
+  created_at: CreatedAt10;
   kind?: Kind6;
   name: Name1;
-  schema_version?: SchemaVersion18;
-  task_id: TaskId8;
+  schema_version?: SchemaVersion19;
+  task_id: TaskId9;
 }
 /**
  * 專案 Taxonomy 的一個節點；概念的權威身分。
@@ -1082,10 +1111,10 @@ export interface TaskRecord {
  * via the `definition` "TaxonomyNode".
  */
 export interface TaxonomyNode {
-  created_at: CreatedAt10;
+  created_at: CreatedAt11;
   node_id: NodeId;
   raw_text: RawText1;
-  schema_version?: SchemaVersion19;
+  schema_version?: SchemaVersion20;
 }
 /**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
@@ -1103,12 +1132,12 @@ export interface TrainingRecipe {
  * via the `definition` "TrainingRun".
  */
 export interface TrainingRun {
-  created_at: CreatedAt11;
+  created_at: CreatedAt12;
   dataset_version_id: DatasetVersionId3;
   recipe: TrainingRecipe;
   retry_of?: RetryOf;
-  schema_version?: SchemaVersion20;
-  task_id: TaskId9;
+  schema_version?: SchemaVersion21;
+  task_id: TaskId10;
   trainer_id?: TrainerId;
   trainer_version: TrainerVersion;
   training_run_id: TrainingRunId1;

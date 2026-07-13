@@ -313,6 +313,87 @@
       "title": "CandidateProvider",
       "type": "object"
     },
+    "CapabilityRelease": {
+      "additionalProperties": false,
+      "properties": {
+        "archive_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Archive Hash",
+          "type": "string"
+        },
+        "artifact_ids": {
+          "items": {
+            "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Artifact Ids",
+          "type": "array"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "manifest_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Manifest Hash",
+          "type": "string"
+        },
+        "parent_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Ref"
+        },
+        "relative_path": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Relative Path",
+          "type": "string"
+        },
+        "release_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Release Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "task_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "version_number": {
+          "minimum": 1,
+          "title": "Version Number",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "release_id",
+        "version_number",
+        "task_id",
+        "artifact_ids",
+        "archive_hash",
+        "manifest_hash",
+        "relative_path",
+        "created_at"
+      ],
+      "title": "CapabilityRelease",
+      "type": "object"
+    },
     "Claim": {
       "additionalProperties": false,
       "description": "單一實例的陳述。Claim 是有出處的意見，不是事實（憲法 §3）。",

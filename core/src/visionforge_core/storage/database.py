@@ -230,6 +230,18 @@ CREATE TABLE evaluation_feedback(
 CREATE INDEX idx_feedback_task_media ON evaluation_feedback(task_id, media_hash);
 """
 
+_V0007 = """
+CREATE TABLE capability_releases(
+    release_id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL REFERENCES tasks(task_id),
+    version_number INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(task_id, version_number)
+);
+CREATE INDEX idx_releases_task ON capability_releases(task_id, version_number);
+"""
+
 # 遷移只增不改：新版本＝追加項目（D9：任何歷史專案永遠打得開）。
 MIGRATIONS: tuple[tuple[int, str], ...] = (
     (1, _V0001),
@@ -238,6 +250,7 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
     (4, _V0004),
     (5, _V0005),
     (6, _V0006),
+    (7, _V0007),
 )
 MAX_SCHEMA = MIGRATIONS[-1][0]
 

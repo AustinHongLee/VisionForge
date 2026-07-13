@@ -18,6 +18,7 @@ from visionforge_core.contracts import (
     AnnotationRevision,
     BBox,
     CalibrationSnapshot,
+    CapabilityRelease,
     Claim,
     Concept,
     ConceptDefinition,
@@ -65,6 +66,7 @@ from visionforge_app.processing import UnknownMediaError, process_media
 from visionforge_app.processing.run import apply_latest_to_claims
 from visionforge_app.provider_config import ProviderConfigurationError, load_provider
 from visionforge_app.query import MediaPage, list_media, thumbnail_path
+from visionforge_app.release import build_release
 from visionforge_app.training import TrainingManager, interrupt_orphaned_runs
 from visionforge_app.training.tiny_detector import TrainingDependencyError, load_and_predict
 
@@ -220,6 +222,10 @@ class TrainingStatusResponse(BaseModel):
 class ApplyResponse(BaseModel):
     artifact_id: str
     predictions: tuple[ModelPrediction, ...]
+
+
+class CreateReleaseRequest(BaseModel):
+    artifact_id: str
 
 
 _LOCAL_RENDERER_ORIGIN_RE = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
@@ -672,6 +678,42 @@ def create_app(
             ) from exc
         except ConflictError as exc:
             raise HTTPException(status_code=409, detail={"error": str(exc)}) from exc
+
+    @app.get("/tasks/{task_id}/releases", response_model=list[CapabilityRelease])
+    def releases(task_id: str) -> list[CapabilityRelease]:
+        with request_project() as current:
+            return current.capability_releases.list_by_task(task_id)
+
+    @app.post("/releases", response_model=CapabilityRelease)
+    def create_release(request: CreateReleaseRequest) -> CapabilityRelease:
+        try:
+            with request_project() as current:
+                return build_release(
+                    current,
+                    artifact_id=request.artifact_id,
+                    release_id=_new_ulid(),
+                    created_at=_utc_now(),
+                )
+        except NotFoundError as exc:
+            raise HTTPException(status_code=404, detail={"error": "artifact_not_found"}) from exc
+        except (ConflictError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail={"error": str(exc)}) from exc
+
+    @app.get("/releases/{release_id}/archive")
+    def release_archive(release_id: str) -> FileResponse:
+        try:
+            with request_project() as current:
+                release = current.capability_releases.get(release_id)
+                path = current.root / release.relative_path
+                if not path.is_file():
+                    raise NotFoundError("release archive 不存在")
+        except NotFoundError as exc:
+            raise HTTPException(status_code=404, detail={"error": "release_not_found"}) from exc
+        return FileResponse(
+            path,
+            media_type="application/zip",
+            filename=path.name,
+        )
 
     @app.get("/media/{media_hash}/thumbnail")
     def thumbnail(media_hash: str) -> FileResponse:
