@@ -64,7 +64,7 @@
 | [票-0016-app資料集匯出.md](06-規格票/票-0016-app資料集匯出.md) | 規格票 | — | ⬛ 已結案 | L0 CI 綠自併（de219fb，PR #23，app 59 測試）；POST /export 版本快照＋YOLO/COCO。**M0 資料工房完整可出貨** |
 | [票-0017-OpenAI-provider.md](06-規格票/票-0017-OpenAI-provider.md) | 規格票 | — | ⬛ 已結案 | L2 re-review 通過合併（2f52b2e，PR #24）；第一個真實老師（OpenAI 雲端 VLM）＋sidecar 防孤兒＋provider 錯誤回 CORS 502＋base_url 釘版。**實機對 cat 圖畫框成功** |
 | [VisionForge_重構開工書_R3.md](03-規劃/VisionForge_重構開工書_R3.md) | 規劃 | R3 | 🟩 定案 | **現行產品重構與 Agent 施工基準**；legacy 文件整理與產品施工可平行 |
-| [EXECUTION.md](03-規劃/EXECUTION.md) | 執行 | 活文件 | 🟩 現行 | Slice 0～4 實作真相、機械驗證、限制與下一條施工線 |
+| [EXECUTION.md](03-規劃/EXECUTION.md) | 執行 | 活文件 | 🟩 現行 | Slice 0～4 實作真相、跨電腦接續、產品判決、機械驗證、限制與下一條施工線 |
 | [GoodYolo_產品規劃書.md](03-規劃/GoodYolo_產品規劃書.md) | 規劃 | R1 | ⬛ 已歸檔 | 已由 VisionForge 重構開工書 R3 取代，僅供考古 |
 | [GoodYolo_架構評審_R2.md](04-評審/GoodYolo_架構評審_R2.md) | 評審 | R2 | ⬛ 已歸檔 | 已完成歷史使命；未被 R3 重申的結論不得作為現行施工依據 |
 
