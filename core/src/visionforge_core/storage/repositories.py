@@ -34,6 +34,7 @@ from visionforge_core.contracts import (
     ReviewEvent,
     TaskRecord,
     TaxonomyNode,
+    TeacherConsent,
     TrainingRun,
     TrainingRunEvent,
 )
@@ -320,6 +321,33 @@ class ClaimTeachingContextRepository:
             (latest["run_id"], task_id),
         )
         return [Claim.model_validate_json(row["json"]) for row in rows]
+
+
+class TeacherConsentRepository:
+    def __init__(self, db: Database) -> None:
+        self._db = db
+
+    def add(self, consent: TeacherConsent) -> None:
+        _insert(
+            self._db,
+            "INSERT INTO teacher_consents(consent_id, provider_id, provider_version,"
+            " granted_at, json) VALUES(?, ?, ?, ?, ?)",
+            (
+                consent.consent_id,
+                consent.provider_id,
+                consent.provider_version,
+                consent.granted_at.isoformat(),
+                consent.model_dump_json(),
+            ),
+            f"teacher consent {consent.provider_id}@{consent.provider_version}",
+        )
+
+    def get(self, provider_id: str, provider_version: str) -> TeacherConsent | None:
+        row = self._db.query_one(
+            "SELECT json FROM teacher_consents WHERE provider_id = ? AND provider_version = ?",
+            (provider_id, provider_version),
+        )
+        return TeacherConsent.model_validate_json(row["json"]) if row else None
 
 
 class RunRepository:

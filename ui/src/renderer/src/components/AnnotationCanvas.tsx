@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import type { PointerEvent as ReactPointerEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import type {
   AnnotationRevision,
   BBox,
@@ -44,6 +44,14 @@ const styleFor = (bbox: BBox): React.CSSProperties => ({
   top: `${bbox.y1 * 100}%`,
   width: `${(bbox.x2 - bbox.x1) * 100}%`,
 });
+
+const moveBBox = (bbox: BBox, dx: number, dy: number): BBox => {
+  const width = bbox.x2 - bbox.x1;
+  const height = bbox.y2 - bbox.y1;
+  const x1 = clamp(Math.min(1 - width, bbox.x1 + dx));
+  const y1 = clamp(Math.min(1 - height, bbox.y1 + dy));
+  return { type: "bbox", x1, x2: x1 + width, y1, y2: y1 + height };
+};
 
 const AnnotationCanvas = ({
   annotations,
@@ -183,6 +191,33 @@ const AnnotationCanvas = ({
     onEdit(finished.annotation.annotation_id, finished.annotation.concept_id, finished.current);
   };
 
+  const handleAnnotationKey = (
+    event: ReactKeyboardEvent<HTMLDivElement>,
+    annotation: AnnotationRevision,
+  ): void => {
+    if (busy || annotation.bbox === null) return;
+    if (event.key === "Delete" || event.key === "Backspace") {
+      event.preventDefault();
+      onDelete(annotation.annotation_id);
+      return;
+    }
+    const step = event.shiftKey ? 0.02 : 0.005;
+    const direction: Record<string, [number, number]> = {
+      ArrowDown: [0, step],
+      ArrowLeft: [-step, 0],
+      ArrowRight: [step, 0],
+      ArrowUp: [0, -step],
+    };
+    const delta = direction[event.key];
+    if (delta === undefined) return;
+    event.preventDefault();
+    onEdit(
+      annotation.annotation_id,
+      annotation.concept_id,
+      moveBBox(annotation.bbox, delta[0], delta[1]),
+    );
+  };
+
   return (
     <div className="annotation-canvas">
       <div className="annotation-toolbar">
@@ -212,6 +247,22 @@ const AnnotationCanvas = ({
           onClick={() => setDrawing((value) => !value)}
         >
           {drawing ? "拖曳圖片畫框" : "新增框"}
+        </button>
+        <button
+          className="secondary-action"
+          disabled={selectedConceptId === "" || busy}
+          type="button"
+          onClick={() =>
+            onAdd(selectedConceptId, {
+              type: "bbox",
+              x1: 0.35,
+              x2: 0.65,
+              y1: 0.35,
+              y2: 0.65,
+            })
+          }
+        >
+          鍵盤新增置中框
         </button>
         <button
           className="secondary-action danger"
@@ -254,12 +305,20 @@ const AnnotationCanvas = ({
             }
             return (
               <div
+                aria-label={`${conceptNames.get(annotation.concept_id) ?? "未知類別"} 標註框；方向鍵移動，Shift 加速，Delete 刪除`}
                 className={`annotation-box ${
                   selectedAnnotationId === annotation.annotation_id ? "is-selected" : ""
                 }`}
                 data-testid="annotation-box"
                 key={annotation.annotation_id}
+                role="button"
                 style={styleFor(bbox)}
+                tabIndex={0}
+                onFocus={() => {
+                  setSelectedAnnotationId(annotation.annotation_id);
+                  setSelectedConceptId(annotation.concept_id);
+                }}
+                onKeyDown={(event) => handleAnnotationKey(event, annotation)}
                 onPointerDown={(event) => startExisting(event, annotation, "move")}
               >
                 <span>{conceptNames.get(annotation.concept_id) ?? "未知類別"}</span>

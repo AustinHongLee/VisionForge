@@ -2871,6 +2871,61 @@
       "title": "TaxonomyNode",
       "type": "object"
     },
+    "TeacherConsent": {
+      "additionalProperties": false,
+      "description": "Project 對特定雲端教師版本的明確、可稽核同意。",
+      "properties": {
+        "consent_id": {
+          "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+          "title": "Consent Id",
+          "type": "string"
+        },
+        "granted_at": {
+          "format": "date-time",
+          "title": "Granted At",
+          "type": "string"
+        },
+        "granted_by": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Granted By",
+          "type": "string"
+        },
+        "media_scope": {
+          "const": "selected_image_only",
+          "default": "selected_image_only",
+          "title": "Media Scope",
+          "type": "string"
+        },
+        "provider_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Provider Id",
+          "type": "string"
+        },
+        "provider_version": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Provider Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "consent_id",
+        "provider_id",
+        "provider_version",
+        "granted_by",
+        "granted_at"
+      ],
+      "title": "TeacherConsent",
+      "type": "object"
+    },
     "TrainingRecipe": {
       "additionalProperties": false,
       "properties": {

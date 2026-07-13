@@ -5,4 +5,6 @@ export interface DesktopBridge {
   getAppVersion(): Promise<string>;
   getPlatform(): Promise<"win32" | "darwin" | "linux">;
   getApiBaseUrl(): Promise<string>;
+  getProjectPath(): Promise<string>;
+  switchProject(path: string): Promise<void>;
 }

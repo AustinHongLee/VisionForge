@@ -72,6 +72,15 @@ export interface TeachResult {
   claims: Claim[];
 }
 
+export interface TeacherStatus {
+  provider_id: string;
+  provider_version: string;
+  locality: "local" | "cloud";
+  requires_consent: boolean;
+  consented: boolean;
+  media_scope: "selected_image_only";
+}
+
 export interface FreezeDatasetResult {
   version: DatasetVersion;
   readiness: ReadinessReport;
@@ -241,6 +250,12 @@ export const teach = async (
     concept_ids: conceptIds,
     media_hash: mediaHash,
   });
+
+export const teacherStatus = async (): Promise<TeacherStatus> =>
+  jsonRequest("/teacher/status", "GET");
+
+export const grantTeacherConsent = async (): Promise<TeacherStatus> =>
+  jsonRequest("/teacher/consent", "POST", {});
 
 export const addAnnotation = async (body: {
   task_id: string;

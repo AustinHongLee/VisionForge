@@ -66,6 +66,7 @@ from visionforge_core.contracts.teaching import (
     CoverageState,
     MediaAssignment,
     TaskRecord,
+    TeacherConsent,
 )
 from visionforge_core.contracts.training import (
     ClassMapEntry,
@@ -158,6 +159,7 @@ __all__ = [
     "SourceKind",
     "TaxonomyNode",
     "TaskRecord",
+    "TeacherConsent",
     "TrainingRecipe",
     "TrainingRun",
     "TrainingRunEvent",

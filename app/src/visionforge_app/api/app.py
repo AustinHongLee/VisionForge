@@ -36,6 +36,7 @@ from visionforge_core.contracts import (
     ModelPrediction,
     ReadinessReport,
     TaskRecord,
+    TeacherConsent,
     TrainingRecipe,
     TrainingRun,
     TrainingRunEvent,
@@ -166,6 +167,15 @@ class TeachRequest(BaseModel):
 class TeachResponse(BaseModel):
     run_id: str
     claims: tuple[Claim, ...]
+
+
+class TeacherStatusResponse(BaseModel):
+    provider_id: str
+    provider_version: str
+    locality: Literal["local", "cloud"]
+    requires_consent: bool
+    consented: bool
+    media_scope: Literal["selected_image_only"] = "selected_image_only"
 
 
 class TeachingStateResponse(BaseModel):
@@ -379,6 +389,64 @@ def create_app(
         except ConflictError as exc:
             raise HTTPException(status_code=409, detail={"error": str(exc)}) from exc
 
+    def teacher_status_for(
+        current: Project, active_provider: VisionProvider
+    ) -> TeacherStatusResponse:
+        capability = active_provider.capability
+        requires_consent = capability.locality == "cloud"
+        consented = not requires_consent or current.teacher_consents.get(
+            capability.provider_id, capability.version
+        ) is not None
+        return TeacherStatusResponse(
+            provider_id=capability.provider_id,
+            provider_version=capability.version,
+            locality=capability.locality,
+            requires_consent=requires_consent,
+            consented=consented,
+        )
+
+    def require_teacher_consent(current: Project, active_provider: VisionProvider) -> None:
+        status = teacher_status_for(current, active_provider)
+        if status.requires_consent and not status.consented:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "teacher_consent_required",
+                    "message": "此 Project 尚未同意把所選圖片送給雲端 Teacher",
+                },
+            )
+
+    @app.get("/teacher/status", response_model=TeacherStatusResponse)
+    def teacher_status() -> TeacherStatusResponse:
+        try:
+            with request_project() as current:
+                active_provider = provider_override or load_provider(current)
+                return teacher_status_for(current, active_provider)
+        except ProviderConfigurationError as exc:
+            raise _provider_not_configured(exc) from exc
+
+    @app.post("/teacher/consent", response_model=TeacherStatusResponse)
+    def grant_teacher_consent() -> TeacherStatusResponse:
+        try:
+            with request_project() as current:
+                active_provider = provider_override or load_provider(current)
+                capability = active_provider.capability
+                if capability.locality == "cloud" and current.teacher_consents.get(
+                    capability.provider_id, capability.version
+                ) is None:
+                    current.teacher_consents.add(
+                        TeacherConsent(
+                            consent_id=_new_ulid(),
+                            provider_id=capability.provider_id,
+                            provider_version=capability.version,
+                            granted_by=_LOCAL_ACTOR,
+                            granted_at=_utc_now(),
+                        )
+                    )
+                return teacher_status_for(current, active_provider)
+        except ProviderConfigurationError as exc:
+            raise _provider_not_configured(exc) from exc
+
     @app.get(
         "/tasks/{task_id}/media/{media_hash}/teaching",
         response_model=TeachingStateResponse,
@@ -427,6 +495,8 @@ def create_app(
                         raise NotFoundError("部分 Concept 不屬於此 Task")
                 if not selected:
                     raise ConflictError("至少需要一個 Concept 才能請教師判讀")
+                active_provider = provider_override or load_provider(current)
+                require_teacher_consent(current, active_provider)
                 assign_media(
                     current,
                     task_id=task_record.task_id,
@@ -443,7 +513,7 @@ def create_app(
                     current,
                     request.media_hash,
                     [Concept(raw_text=concept.display_name) for concept in selected],
-                    provider=provider_override or load_provider(current),
+                    provider=active_provider,
                     teaching_task_id=task_id,
                     concept_ids_by_name=name_map,
                 )
@@ -750,6 +820,7 @@ def create_app(
             data = blob.read_bytes()
             try:
                 active_provider = provider_override or load_provider(current)
+                require_teacher_consent(current, active_provider)
             except ProviderConfigurationError as exc:
                 raise _provider_not_configured(exc) from exc
             try:
@@ -766,11 +837,13 @@ def create_app(
     def process(request: ProcessRequest) -> ProcessResponse:
         try:
             with request_project() as current:
+                active_provider = provider_override or load_provider(current)
+                require_teacher_consent(current, active_provider)
                 outcome = process_media(
                     current,
                     request.media_hash,
                     request.concepts,
-                    provider=provider_override or load_provider(current),
+                    provider=active_provider,
                 )
         except UnknownMediaError as exc:
             raise HTTPException(status_code=404, detail={"error": "media_not_found"}) from exc

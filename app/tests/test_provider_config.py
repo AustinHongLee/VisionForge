@@ -125,6 +125,22 @@ class SingleClaimProvider:
         )
 
 
+class CloudSingleClaimProvider(SingleClaimProvider):
+    @property
+    def capability(self) -> ProviderCapability:
+        return ProviderCapability(
+            provider_id="cloud-teacher",
+            version="2026-07",
+            role="teacher",
+            locality="cloud",
+            tasks=("detect",),
+            promptable_by=("text",),
+            reproducible=False,
+            trainable=False,
+            cost_profile="api_metered",
+        )
+
+
 class FailingProvider:
     @property
     def capability(self) -> ProviderCapability:
@@ -137,7 +153,7 @@ class FailingProvider:
             promptable_by=("text",),
             reproducible=False,
             trainable=False,
-            cost_profile="paid_remote",
+            cost_profile="api_metered",
         )
 
     def infer(self, media_bytes: bytes, request: InferenceRequest) -> InferenceResult:
@@ -168,6 +184,41 @@ def test_api_uses_loaded_provider_when_no_override(project, monkeypatch) -> None
     assert body["claims"][0]["confidence"]["raw"] == 0.88
 
 
+def test_cloud_teacher_requires_project_consent_before_teaching(project) -> None:
+    client = TestClient(create_app(project, provider=CloudSingleClaimProvider()))
+    imported = client.post(
+        "/import",
+        files={"file": ("sample.jpg", _jpeg_bytes(), "image/jpeg")},
+    ).json()
+    task = client.post("/tasks", json={"name": "bolt detection"}).json()
+    concept = client.post(
+        f"/tasks/{task['task_id']}/concepts", json={"display_name": "bolt"}
+    ).json()
+
+    status = client.get("/teacher/status")
+    assert status.status_code == 200
+    assert status.json()["requires_consent"] is True
+    assert status.json()["consented"] is False
+
+    blocked = client.post(
+        f"/tasks/{task['task_id']}/teach",
+        json={"media_hash": imported["media_hash"], "concept_ids": [concept["concept_id"]]},
+    )
+    assert blocked.status_code == 403
+    assert blocked.json()["detail"]["error"] == "teacher_consent_required"
+
+    granted = client.post("/teacher/consent", json={})
+    assert granted.status_code == 200
+    assert granted.json()["consented"] is True
+
+    taught = client.post(
+        f"/tasks/{task['task_id']}/teach",
+        json={"media_hash": imported["media_hash"], "concept_ids": [concept["concept_id"]]},
+    )
+    assert taught.status_code == 200
+    assert client.get("/teacher/status").json()["consented"] is True
+
+
 def test_api_provider_error_returns_cors_502(project, monkeypatch) -> None:
     monkeypatch.setattr(
         "visionforge_app.api.app.load_provider",
@@ -179,6 +230,7 @@ def test_api_provider_error_returns_cors_502(project, monkeypatch) -> None:
         files={"file": ("sample.jpg", _jpeg_bytes(), "image/jpeg")},
     )
     assert imported.status_code == 200
+    assert client.post("/teacher/consent", json={}).status_code == 200
 
     response = client.post(
         "/infer",

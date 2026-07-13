@@ -132,6 +132,7 @@ def test_v3_project_migrates_additively_to_teaching_schema(tmp_path):
     conn = sqlite3.connect(root / "project.db")
     for table in (
         "capability_releases",
+        "teacher_consents",
         "evaluation_feedback",
         "evaluation_reports",
         "model_artifacts",
@@ -154,7 +155,7 @@ def test_v3_project_migrates_additively_to_teaching_schema(tmp_path):
     try:
         assert reopened.tasks.list() == []
         assert reopened.db.query_one(
-            "SELECT 1 FROM schema_migrations WHERE version = 7"
+            "SELECT 1 FROM schema_migrations WHERE version = 8"
         ) is not None
     finally:
         reopened.close()

@@ -133,3 +133,16 @@ class ClaimTeachingContext(StrictModel):
     task_id: Ulid
     concept_id: Ulid
 
+
+class TeacherConsent(StrictModel):
+    """Project 對特定雲端教師版本的明確、可稽核同意。"""
+
+    schema_version: Literal["1.0"] = SCHEMA_VERSION
+    consent_id: Ulid
+    provider_id: str = Field(min_length=1, max_length=64)
+    provider_version: str = Field(min_length=1, max_length=64)
+    media_scope: Literal["selected_image_only"] = "selected_image_only"
+    granted_by: str = Field(min_length=1, max_length=256)
+    granted_at: datetime
+
+    _tz = field_validator("granted_at")(_require_tz)

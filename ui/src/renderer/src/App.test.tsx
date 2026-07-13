@@ -60,9 +60,11 @@ describe("App", () => {
     getApiBaseUrl: vi.fn(),
     getAppVersion: vi.fn(),
     getPlatform: vi.fn(),
+    getProjectPath: vi.fn(),
     openExternal: vi.fn(),
     pickDirectory: vi.fn(),
     showNotification: vi.fn(),
+    switchProject: vi.fn(),
   };
 
   const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>();
@@ -70,6 +72,7 @@ describe("App", () => {
   beforeEach(() => {
     vi.mocked(bridge.getApiBaseUrl).mockResolvedValue(API_BASE);
     vi.mocked(bridge.getAppVersion).mockResolvedValue("0.1.0");
+    vi.mocked(bridge.getProjectPath).mockResolvedValue("C:\\VisionForge\\demo");
     fetchMock.mockReset();
     globalThis.fetch = fetchMock;
     URL.createObjectURL = vi.fn(() => "blob:preview");
@@ -96,6 +99,20 @@ describe("App", () => {
       expect(screen.getByRole("button", { name: new RegExp(label) })).toBeInTheDocument();
     }
     expect(await screen.findByText("v0.1.0")).toBeInTheDocument();
+  });
+
+  it("opens or creates a project through the desktop bridge", async () => {
+    fetchMock.mockImplementation(emptyApi);
+    vi.mocked(bridge.pickDirectory).mockResolvedValue("D:\\VisionForge\\valves");
+    vi.mocked(bridge.switchProject).mockResolvedValue();
+
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "建立／開啟 Project" }));
+
+    await waitFor(() =>
+      expect(bridge.switchProject).toHaveBeenCalledWith("D:\\VisionForge\\valves"),
+    );
+    expect(screen.getByTitle("D:\\VisionForge\\valves")).toBeInTheDocument();
   });
 
   it("opens the portable capability release station", () => {
@@ -212,6 +229,16 @@ describe("App", () => {
       if (path.includes(`/tasks/${TASK_ID}/media/`) && method === "POST") {
         assigned = true;
         return jsonResponse({ media_hash: mediaA.media_hash, task_id: TASK_ID });
+      }
+      if (path === "/teacher/status") {
+        return jsonResponse({
+          consented: true,
+          locality: "local",
+          media_scope: "selected_image_only",
+          provider_id: "fixture",
+          provider_version: "0.1.0",
+          requires_consent: false,
+        });
       }
       if (path === `/tasks/${TASK_ID}/teach`) {
         assigned = true;

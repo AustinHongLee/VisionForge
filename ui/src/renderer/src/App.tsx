@@ -33,6 +33,9 @@ const App = (): React.JSX.Element => {
   const [pendingFiles, setPendingFiles] = useState<string[]>([]);
   const [selectedHash, setSelectedHash] = useState<string | null>(null);
   const [thumbnailUrls, setThumbnailUrls] = useState<Record<string, string>>({});
+  const [projectPath, setProjectPath] = useState("讀取 Project 中");
+  const [isSwitchingProject, setIsSwitchingProject] = useState(false);
+  const [projectEpoch, setProjectEpoch] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -42,19 +45,26 @@ const App = (): React.JSX.Element => {
         setVersion(appVersion);
       }
     });
+    window.bridge.getProjectPath().then((path) => {
+      if (isMounted) {
+        setProjectPath(path);
+      }
+    });
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const loadMedia = async (): Promise<void> => {
+  const loadMedia = async (resetSelection = false): Promise<void> => {
     setIsLoadingMedia(true);
     setApiError(null);
     try {
       const page = await listMedia();
       setMedia(page.items);
-      setSelectedHash((current) => current ?? page.items[0]?.media_hash ?? null);
+      setSelectedHash((current) =>
+        resetSelection ? (page.items[0]?.media_hash ?? null) : (current ?? page.items[0]?.media_hash ?? null),
+      );
       const entries = await Promise.all(
         page.items.map(async (item) => [item.media_hash, await thumbnailUrl(item.media_hash)] as const),
       );
@@ -71,6 +81,24 @@ const App = (): React.JSX.Element => {
   }, []);
 
   const selectedMedia = media.find((item) => item.media_hash === selectedHash) ?? null;
+
+  const chooseProject = async (): Promise<void> => {
+    const path = await window.bridge.pickDirectory();
+    if (path === null) return;
+    setIsSwitchingProject(true);
+    setApiError(null);
+    try {
+      await window.bridge.switchProject(path);
+      setProjectPath(path);
+      setPendingFiles([]);
+      await loadMedia(true);
+      setProjectEpoch((current) => current + 1);
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSwitchingProject(false);
+    }
+  };
 
   const handleFiles = async (files: File[]): Promise<void> => {
     if (files.length === 0) {
@@ -97,6 +125,18 @@ const App = (): React.JSX.Element => {
         <div>
           <p className="eyebrow">VisionForge</p>
           <h1>資料工房</h1>
+        </div>
+        <div className="project-control">
+          <span title={projectPath}>{projectPath}</span>
+          <button
+            className="secondary-action"
+            disabled={isSwitchingProject}
+            type="button"
+            onClick={() => void chooseProject()}
+          >
+            {isSwitchingProject ? "切換中" : "建立／開啟 Project"}
+          </button>
+          <small>空資料夾會建立；既有 VisionForge 資料夾會開啟</small>
         </div>
         <p className="version">v{version}</p>
       </header>
@@ -146,17 +186,18 @@ const App = (): React.JSX.Element => {
               />
             </div>
             <TeachingView
+              key={projectEpoch}
               imageUrl={selectedHash === null ? undefined : thumbnailUrls[selectedHash]}
               media={selectedMedia}
               onError={setApiError}
             />
           </div>
         ) : activeStation === "distill" ? (
-          <DistillView onError={setApiError} />
+          <DistillView key={projectEpoch} onError={setApiError} />
         ) : activeStation === "apply" ? (
-          <ApplyView onError={setApiError} />
+          <ApplyView key={projectEpoch} onError={setApiError} />
         ) : activeStation === "releases" ? (
-          <ReleaseView onError={setApiError} />
+          <ReleaseView key={projectEpoch} onError={setApiError} />
         ) : (
           <div className="empty-panel">
             <p className="eyebrow">{active.english}</p>

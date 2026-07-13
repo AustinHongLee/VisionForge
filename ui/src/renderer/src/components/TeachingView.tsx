@@ -15,13 +15,16 @@ import {
   createTask,
   deleteAnnotation,
   editAnnotation,
+  grantTeacherConsent,
   listConcepts,
   listTasks,
   teach,
+  teacherStatus,
   teachingState,
   updateCoverage,
 } from "../api/client";
 import type { TeachingState } from "../api/client";
+import type { TeacherStatus } from "../api/client";
 import AnnotationCanvas from "./AnnotationCanvas";
 
 interface TeachingViewProps {
@@ -40,6 +43,7 @@ const TeachingView = ({ imageUrl, media, onError }: TeachingViewProps): React.JS
   const [newTaskName, setNewTaskName] = useState("");
   const [newConceptName, setNewConceptName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [consentPreview, setConsentPreview] = useState<TeacherStatus | null>(null);
 
   const activeTask = tasks.find((task) => task.task_id === activeTaskId);
 
@@ -121,15 +125,33 @@ const TeachingView = ({ imageUrl, media, onError }: TeachingViewProps): React.JS
     });
   };
 
+  const invokeTeacher = async (): Promise<void> => {
+    if (media === null || activeTaskId === "") return;
+    await teach(
+      activeTaskId,
+      media.media_hash,
+      concepts.map((concept) => concept.concept_id),
+    );
+    setConsentPreview(null);
+    await refreshScope();
+  };
+
   const runTeacher = (): void => {
     if (media === null || activeTaskId === "") return;
     void perform(async () => {
-      await teach(
-        activeTaskId,
-        media.media_hash,
-        concepts.map((concept) => concept.concept_id),
-      );
-      await refreshScope();
+      const status = await teacherStatus();
+      if (status.requires_consent && !status.consented) {
+        setConsentPreview(status);
+        return;
+      }
+      await invokeTeacher();
+    });
+  };
+
+  const consentAndRunTeacher = (): void => {
+    void perform(async () => {
+      await grantTeacherConsent();
+      await invokeTeacher();
     });
   };
 
@@ -308,6 +330,41 @@ const TeachingView = ({ imageUrl, media, onError }: TeachingViewProps): React.JS
               onDelete={saveDelete}
               onEdit={saveEdit}
             />
+            {consentPreview !== null ? (
+              <section className="teacher-consent" role="dialog" aria-labelledby="teacher-consent-title">
+                <p className="eyebrow">Cloud consent</p>
+                <h3 id="teacher-consent-title">同意這個 Project 使用雲端教師？</h3>
+                <p>
+                  Provider：{consentPreview.provider_id}@{consentPreview.provider_version}
+                </p>
+                <p>這次送出：目前畫面上的一張圖片，以及以下物件名稱。</p>
+                <code>{media.source.detail ?? media.media_hash}</code>
+                <ul>
+                  {concepts.map((concept) => (
+                    <li key={concept.concept_id}>{concept.display_name}</li>
+                  ))}
+                </ul>
+                <p className="muted">不會送出其他 Project、其他圖片、既有標註或本地模型。</p>
+                <div className="inline-controls">
+                  <button
+                    className="primary-action"
+                    disabled={busy}
+                    type="button"
+                    onClick={consentAndRunTeacher}
+                  >
+                    同意並傳送這張圖片
+                  </button>
+                  <button
+                    className="secondary-action"
+                    disabled={busy}
+                    type="button"
+                    onClick={() => setConsentPreview(null)}
+                  >
+                    取消
+                  </button>
+                </div>
+              </section>
+            ) : null}
           </div>
 
           <aside className="teaching-sidebar">

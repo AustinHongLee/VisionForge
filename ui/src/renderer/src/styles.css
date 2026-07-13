@@ -587,6 +587,44 @@ h3 {
   justify-content: end;
 }
 
+.project-control {
+  align-items: flex-end;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.project-control > span {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  max-width: min(42vw, 32rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-control > small {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.teacher-consent {
+  background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 0.9rem;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.teacher-consent code {
+  display: block;
+  margin: 0.65rem 0;
+  overflow-wrap: anywhere;
+}
+
 .teaching-panel {
   display: grid;
   min-width: 0;

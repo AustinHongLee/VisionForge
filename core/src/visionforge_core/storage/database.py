@@ -242,6 +242,17 @@ CREATE TABLE capability_releases(
 CREATE INDEX idx_releases_task ON capability_releases(task_id, version_number);
 """
 
+_V0008 = """
+CREATE TABLE teacher_consents(
+    consent_id TEXT PRIMARY KEY,
+    provider_id TEXT NOT NULL,
+    provider_version TEXT NOT NULL,
+    granted_at TEXT NOT NULL,
+    json TEXT NOT NULL,
+    UNIQUE(provider_id, provider_version)
+);
+"""
+
 # 遷移只增不改：新版本＝追加項目（D9：任何歷史專案永遠打得開）。
 MIGRATIONS: tuple[tuple[int, str], ...] = (
     (1, _V0001),
@@ -251,6 +262,7 @@ MIGRATIONS: tuple[tuple[int, str], ...] = (
     (5, _V0005),
     (6, _V0006),
     (7, _V0007),
+    (8, _V0008),
 )
 MAX_SCHEMA = MIGRATIONS[-1][0]
 

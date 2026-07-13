@@ -30,6 +30,7 @@ from visionforge_core.storage.repositories import (
     ReviewEventRepository,
     RunRepository,
     TaskRepository,
+    TeacherConsentRepository,
     TrainingRunRepository,
 )
 
@@ -61,6 +62,7 @@ __all__ = [
     "ReviewEventRepository",
     "RunRepository",
     "TaskRepository",
+    "TeacherConsentRepository",
     "TrainingRunRepository",
     "StorageError",
     "create_project",

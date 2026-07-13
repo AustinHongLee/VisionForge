@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, Notification, shell } from "electron";
-import { join } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { BRIDGE_CHANNELS } from "../shared/ipcChannels";
 import { SidecarManager } from "./sidecar";
@@ -20,9 +21,24 @@ const getDesktopPlatform = (): DesktopPlatform => {
 
 let sidecarManager: SidecarManager | null = null;
 let apiBaseUrl: string | null = null;
+let activeProjectPath: string | null = null;
 
-const getProjectPath = (): string =>
-  process.env.VISIONFORGE_PROJECT ?? join(app.getPath("userData"), "dev-project");
+const projectStatePath = (): string => join(app.getPath("userData"), "last-project.json");
+
+const getInitialProjectPath = (): string => {
+  if (process.env.VISIONFORGE_PROJECT) return process.env.VISIONFORGE_PROJECT;
+  try {
+    const parsed = JSON.parse(readFileSync(projectStatePath(), "utf8")) as { path?: unknown };
+    if (typeof parsed.path === "string" && parsed.path.trim() !== "") return parsed.path;
+  } catch {
+    // First launch or an invalid preference file falls back to the local default.
+  }
+  return join(app.getPath("userData"), "dev-project");
+};
+
+const persistProjectPath = (projectPath: string): void => {
+  writeFileSync(projectStatePath(), JSON.stringify({ path: projectPath }, null, 2), "utf8");
+};
 
 const formatError = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
@@ -42,7 +58,13 @@ const isAllowedAppNavigation = (targetUrl: string, appEntryUrl: string): boolean
   }
 };
 
-const registerBridgeHandlers = (getApiBaseUrl: () => string): void => {
+interface BridgeState {
+  getApiBaseUrl(): string;
+  getProjectPath(): string;
+  switchProject(path: string): Promise<void>;
+}
+
+const registerBridgeHandlers = (state: BridgeState): void => {
   ipcMain.handle(BRIDGE_CHANNELS.pickDirectory, async () => {
     const result = await dialog.showOpenDialog({
       properties: ["openDirectory"],
@@ -70,7 +92,11 @@ const registerBridgeHandlers = (getApiBaseUrl: () => string): void => {
 
   ipcMain.handle(BRIDGE_CHANNELS.getAppVersion, () => app.getVersion());
   ipcMain.handle(BRIDGE_CHANNELS.getPlatform, () => getDesktopPlatform());
-  ipcMain.handle(BRIDGE_CHANNELS.getApiBaseUrl, () => getApiBaseUrl());
+  ipcMain.handle(BRIDGE_CHANNELS.getApiBaseUrl, () => state.getApiBaseUrl());
+  ipcMain.handle(BRIDGE_CHANNELS.getProjectPath, () => state.getProjectPath());
+  ipcMain.handle(BRIDGE_CHANNELS.switchProject, (_event, path: string) =>
+    state.switchProject(path),
+  );
 };
 
 const createWindow = (): void => {
@@ -123,11 +149,24 @@ const focusExistingWindow = (): void => {
   window.focus();
 };
 
-const startSidecar = async (): Promise<string> => {
-  sidecarManager = new SidecarManager({
-    projectPath: getProjectPath(),
-  });
-  return sidecarManager.start();
+const switchProject = async (projectPath: string): Promise<void> => {
+  if (typeof projectPath !== "string" || projectPath.trim() === "") {
+    throw new Error("Project path must be a non-empty string.");
+  }
+  const normalizedPath = resolve(projectPath);
+  const candidate = new SidecarManager({ projectPath: normalizedPath });
+  const candidateApiBaseUrl = await candidate.start();
+  try {
+    persistProjectPath(normalizedPath);
+  } catch (error) {
+    candidate.stop();
+    throw error;
+  }
+  const previous = sidecarManager;
+  sidecarManager = candidate;
+  apiBaseUrl = candidateApiBaseUrl;
+  activeProjectPath = normalizedPath;
+  previous?.stop();
 };
 
 const boot = async (): Promise<void> => {
@@ -141,7 +180,7 @@ const boot = async (): Promise<void> => {
   });
 
   try {
-    apiBaseUrl = await startSidecar();
+    await switchProject(getInitialProjectPath());
   } catch (error) {
     dialog.showErrorBox(
       "VisionForge API 啟動失敗",
@@ -151,11 +190,20 @@ const boot = async (): Promise<void> => {
     return;
   }
 
-  registerBridgeHandlers(() => {
-    if (apiBaseUrl === null) {
-      throw new Error("VisionForge API sidecar is not ready.");
-    }
-    return apiBaseUrl;
+  registerBridgeHandlers({
+    getApiBaseUrl: () => {
+      if (apiBaseUrl === null) {
+        throw new Error("VisionForge API sidecar is not ready.");
+      }
+      return apiBaseUrl;
+    },
+    getProjectPath: () => {
+      if (activeProjectPath === null) {
+        throw new Error("VisionForge Project is not ready.");
+      }
+      return activeProjectPath;
+    },
+    switchProject,
   });
   createWindow();
 

@@ -349,6 +349,13 @@ export type CreatedAt11 = string;
 export type NodeId = string;
 export type RawText1 = string;
 export type SchemaVersion20 = "1.0";
+export type ConsentId = string;
+export type GrantedAt = string;
+export type GrantedBy = string;
+export type MediaScope = "selected_image_only";
+export type ProviderId3 = string;
+export type ProviderVersion2 = string;
+export type SchemaVersion21 = "1.0";
 export type BatchSize = number;
 export type Epochs = number;
 export type InputSize1 = number;
@@ -357,7 +364,7 @@ export type Seed = number;
 export type CreatedAt12 = string;
 export type DatasetVersionId3 = string;
 export type RetryOf = string | null;
-export type SchemaVersion21 = "1.0";
+export type SchemaVersion22 = "1.0";
 export type TaskId10 = string;
 export type TrainerId = "visionforge_tiny_detector";
 export type TrainerVersion = string;
@@ -1117,6 +1124,21 @@ export interface TaxonomyNode {
   schema_version?: SchemaVersion20;
 }
 /**
+ * Project 對特定雲端教師版本的明確、可稽核同意。
+ *
+ * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
+ * via the `definition` "TeacherConsent".
+ */
+export interface TeacherConsent {
+  consent_id: ConsentId;
+  granted_at: GrantedAt;
+  granted_by: GrantedBy;
+  media_scope?: MediaScope;
+  provider_id: ProviderId3;
+  provider_version: ProviderVersion2;
+  schema_version?: SchemaVersion21;
+}
+/**
  * This interface was referenced by `VisionForgeContracts`'s JSON-Schema
  * via the `definition` "TrainingRecipe".
  */
@@ -1136,7 +1158,7 @@ export interface TrainingRun {
   dataset_version_id: DatasetVersionId3;
   recipe: TrainingRecipe;
   retry_of?: RetryOf;
-  schema_version?: SchemaVersion21;
+  schema_version?: SchemaVersion22;
   task_id: TaskId10;
   trainer_id?: TrainerId;
   trainer_version: TrainerVersion;

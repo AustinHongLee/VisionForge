@@ -36,6 +36,7 @@ from visionforge_core.storage.repositories import (
     RunRepository,
     TaskRepository,
     TaxonomyRepository,
+    TeacherConsentRepository,
     TrainingRunRepository,
 )
 
@@ -56,6 +57,7 @@ class Project:
         self.coverage = CoverageRepository(db)
         self.annotations = AnnotationRepository(db)
         self.claim_teaching_context = ClaimTeachingContextRepository(db)
+        self.teacher_consents = TeacherConsentRepository(db)
         self.dataset_versions = DatasetVersionRepository(db)
         self.training_runs = TrainingRunRepository(db)
         self.model_artifacts = ModelArtifactRepository(db)
